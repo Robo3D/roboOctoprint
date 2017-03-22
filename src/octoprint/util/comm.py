@@ -353,6 +353,10 @@ class MachineCom(object):
 		self._temperature_timer = None
 		self._sd_status_timer = None
 
+		#Robo edits
+		self._pause_lock = False
+		self._fire_unpause = True
+
 		# hooks
 		self._pluginManager = octoprint.plugin.plugin_manager()
 
@@ -858,15 +862,19 @@ class MachineCom(object):
 
 	def _pause_preparation_done(self):
 		self._callback.on_comm_print_job_paused()
+		self._pause_lock = False
+		if not self._fire_unpause:
+			self.setPause(self._fire_unpause)
 
 	def setPause(self, pause):
+
 		if self.isStreaming():
 			return
 
 		if not self._currentFile:
 			return
 
-		if not pause and self.isPaused():
+		if not pause and self.isPaused() and not self._pause_lock:
 			if self._pauseWaitStartTime:
 				self._pauseWaitTimeLost = self._pauseWaitTimeLost + (time.time() - self._pauseWaitStartTime)
 				self._pauseWaitStartTime = None
@@ -885,6 +893,9 @@ class MachineCom(object):
 			# now make sure we actually do something, up until now we only filled up the queue
 			self._sendFromQueue()
 
+		elif self._pause_lock:
+			self._fire_unpause = pause
+
 		elif pause and self.isPrinting():
 			if not self._pauseWaitStartTime:
 				self._pauseWaitStartTime = time.time()
@@ -901,6 +912,8 @@ class MachineCom(object):
 				self.sendCommand("M114")
 
 			self.sendCommand("M400", on_sent=_on_M400_sent)
+			self._pause_lock = True
+			self._fire_unpause = True
 
 	def getSdFiles(self):
 		return self._sdFiles
