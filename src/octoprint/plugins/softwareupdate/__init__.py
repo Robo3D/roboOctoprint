@@ -161,7 +161,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				"octoprint": {
 					"type": "github_release",
 					"user": "Robo3D",
-					"repo": "OctoPrint",
+					"repo": "roboOctoprint",
 					"update_script": "{{python}} \"{update_script}\" --branch={{branch}} --force={{force}} \"{{folder}}\" {{target}}".format(update_script=update_script),
 					"restart": "octoprint",
 					"stable_branch": dict(branch="master", name="Stable"),
