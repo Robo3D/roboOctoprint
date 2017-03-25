@@ -1109,107 +1109,120 @@ class LocalFileStorage(StorageInterface):
 			self._save_metadata(path, metadata)
 
 	def _list_folder(self, path, base="", entry_filter=None, recursive=True, **kwargs):
-		if entry_filter is None:
-			entry_filter = kwargs.get("filter", None)
+		try:
+			if entry_filter is None:
+				entry_filter = kwargs.get("filter", None)
+	
+			metadata = self._get_metadata(path)
+			if not metadata:
+				metadata = dict()
+			metadata_dirty = False
+	
+	
+	
+			result = dict()
+	
+			if os.path.isdir(path):
+				#make sure that no one unplugged any media
+				for entry in scandir(path):
+					if is_hidden_path(entry.name):
+						# no hidden files and folders
+						continue
+		
+		
+		
+					entry_name = entry.name
+					entry_path = entry.path
+					entry_is_file = entry.is_file()
+					entry_is_dir = entry.is_dir()
+					entry_stat = entry.stat()
+		
+					try:
+						new_entry_name, new_entry_path = self._sanitize_entry(entry_name, path, entry_path)
+						if entry_name != new_entry_name or entry_path != new_entry_path:
+							entry_name = new_entry_name
+							entry_path = new_entry_path
+							entry_stat = os.stat(entry_path)
+					except:
+						# error while trying to rename the file, we'll continue here and ignore it
+						continue
+		
+					path_in_location = entry_name if not base else base + entry_name
+		
+					# file handling
+					if entry_is_file:
+						type_path = octoprint.filemanager.get_file_type(entry_name)
+						if not type_path:
+							# only supported extensions
+							continue
+						else:
+							file_type = type_path[0]
+		
+						if entry_name in metadata and isinstance(metadata[entry_name], dict):
+							entry_data = metadata[entry_name]
+						else:
+							entry_data = self._add_basic_metadata(path, entry_name, save=False, metadata=metadata)
+							metadata_dirty = True
+		
+						# TODO extract model hash from source if possible to recreate link
+		
+						if not entry_filter or entry_filter(entry_name, entry_data):
+							# only add files passing the optional filter
+							extended_entry_data = dict()
+							extended_entry_data.update(entry_data)
+							extended_entry_data["name"] = entry_name
+							extended_entry_data["path"] = path_in_location
+							extended_entry_data["type"] = file_type
+							extended_entry_data["typePath"] = type_path
+							stat = entry_stat
+							if stat:
+								extended_entry_data["size"] = stat.st_size
+								extended_entry_data["date"] = int(stat.st_mtime)
+		
+							result[entry_name] = extended_entry_data
+		
+					# folder recursion
+					elif entry_is_dir:
+						entry_data = dict(
+							name=entry_name,
+							path=path_in_location,
+							type="folder",
+							type_path=["folder"]
+						)
+						if recursive:
+							sub_result = self._list_folder(entry_path, base=path_in_location + "/", entry_filter=entry_filter,
+							                               recursive=recursive)
+							entry_data["children"] = sub_result
+		
+						if not entry_filter or entry_filter(entry_name, entry_data):
+							def get_size():
+								total_size = 0
+								for element in entry_data["children"].values():
+									if "size" in element:
+										total_size += element["size"]
+		
+								return total_size
+		
+							# only add folders passing the optional filter
+							extended_entry_data = dict()
+							extended_entry_data.update(entry_data)
+							if recursive:
+								extended_entry_data["size"] = get_size()
+		
+							result[entry_name] = extended_entry_data
+	
+			# TODO recreate links if we have metadata less entries
+	
+			# save metadata
+			if metadata_dirty:
+				self._save_metadata(path, metadata)
+	
+			return result
+		except Exception as e:
+			self._logger.info("Did someone prematurely unplug media?")
+			return dict()
 
-		metadata = self._get_metadata(path)
-		if not metadata:
-			metadata = dict()
-		metadata_dirty = False
 
-		result = dict()
-		for entry in scandir(path):
-			if is_hidden_path(entry.name):
-				# no hidden files and folders
-				continue
-
-			entry_name = entry.name
-			entry_path = entry.path
-			entry_is_file = entry.is_file()
-			entry_is_dir = entry.is_dir()
-			entry_stat = entry.stat()
-
-			try:
-				new_entry_name, new_entry_path = self._sanitize_entry(entry_name, path, entry_path)
-				if entry_name != new_entry_name or entry_path != new_entry_path:
-					entry_name = new_entry_name
-					entry_path = new_entry_path
-					entry_stat = os.stat(entry_path)
-			except:
-				# error while trying to rename the file, we'll continue here and ignore it
-				continue
-
-			path_in_location = entry_name if not base else base + entry_name
-
-			# file handling
-			if entry_is_file:
-				type_path = octoprint.filemanager.get_file_type(entry_name)
-				if not type_path:
-					# only supported extensions
-					continue
-				else:
-					file_type = type_path[0]
-
-				if entry_name in metadata and isinstance(metadata[entry_name], dict):
-					entry_data = metadata[entry_name]
-				else:
-					entry_data = self._add_basic_metadata(path, entry_name, save=False, metadata=metadata)
-					metadata_dirty = True
-
-				# TODO extract model hash from source if possible to recreate link
-
-				if not entry_filter or entry_filter(entry_name, entry_data):
-					# only add files passing the optional filter
-					extended_entry_data = dict()
-					extended_entry_data.update(entry_data)
-					extended_entry_data["name"] = entry_name
-					extended_entry_data["path"] = path_in_location
-					extended_entry_data["type"] = file_type
-					extended_entry_data["typePath"] = type_path
-					stat = entry_stat
-					if stat:
-						extended_entry_data["size"] = stat.st_size
-						extended_entry_data["date"] = int(stat.st_mtime)
-
-					result[entry_name] = extended_entry_data
-
-			# folder recursion
-			elif entry_is_dir:
-				entry_data = dict(
-					name=entry_name,
-					path=path_in_location,
-					type="folder",
-					type_path=["folder"]
-				)
-				if recursive:
-					sub_result = self._list_folder(entry_path, base=path_in_location + "/", entry_filter=entry_filter,
-					                               recursive=recursive)
-					entry_data["children"] = sub_result
-
-				if not entry_filter or entry_filter(entry_name, entry_data):
-					def get_size():
-						total_size = 0
-						for element in entry_data["children"].values():
-							if "size" in element:
-								total_size += element["size"]
-
-						return total_size
-
-					# only add folders passing the optional filter
-					extended_entry_data = dict()
-					extended_entry_data.update(entry_data)
-					if recursive:
-						extended_entry_data["size"] = get_size()
-
-					result[entry_name] = extended_entry_data
-
-		# TODO recreate links if we have metadata less entries
-
-		# save metadata
-		if metadata_dirty:
-			self._save_metadata(path, metadata)
-
-		return result
 
 	def _add_basic_metadata(self, path, entry, additional_metadata=None, save=True, metadata=None):
 		if additional_metadata is None:
