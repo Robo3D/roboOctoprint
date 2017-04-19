@@ -1695,9 +1695,20 @@ class MachineCom(object):
 				serial_obj = serial.Serial(str(port), 115200 if 115200 in baudrates else baudrates[0], timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
 			else:
 				serial_obj = serial.Serial(str(port), baudrate, timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
+
+			self._log("Resetting connection")
+			#Reset the controller
+			serial_obj.setDTR(1)
+			time.sleep(0.1)
+			serial_obj.setDTR(0)
+			time.sleep(0.2)
+			self._log("connection Reset")
+
 			serial_obj.close()
 			serial_obj.parity = serial.PARITY_NONE
 			serial_obj.open()
+
+			
 
 			return serial_obj
 
