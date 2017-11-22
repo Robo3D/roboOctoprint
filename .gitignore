@@ -5,6 +5,8 @@ src/octoprint/templates/_data/THIRDPARTYLICENSES.md
 
 devtools
 
+.ftpconfig
+
 *.tar.bz2
 *.tar.gz
 *.7z
