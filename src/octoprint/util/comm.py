@@ -286,6 +286,9 @@ class MachineCom(object):
 		self._heating = False
 		self._connection_closing = False
 
+		#canceled print
+		self.cancel_called = False
+
 		self._timeout = None
 		self._timeout_intervals = dict()
 		for key, value in settings().get(["serial", "timeout"], merged=True, asdict=True).items():
@@ -689,6 +692,8 @@ class MachineCom(object):
 			context.update(dict(pause_position=self.pause_position))
 		elif scriptName == "afterPrintCancelled":
 			context.update(dict(cancel_position=self.cancel_position))
+			self.cancel_called = True #this gets reset when another print is started.
+			self.kill_all_remaining_tasks()
 
 		template = settings().loadScript("gcode", scriptName, context=context)
 		if template is None:
@@ -731,8 +736,21 @@ class MachineCom(object):
 					scriptLines += list(suffix)
 
 		for line in scriptLines:
+			
+			self._logger.info("Script: " + str(scriptName) + " Reading Line: " + str(line))
 			self.sendCommand(line)
+			
+
 		return "\n".join(scriptLines)
+
+	def kill_all_remaining_tasks(self):
+		while not self._command_queue.empty():
+			item = self._command_queue.get()
+			self._logger.info("Deleting Task: " + str(item))
+			self._command_queue.task_done()
+
+		self._command_queue.join()
+		return
 
 	def startPrint(self, pos=None):
 		if not self.isOperational() or self.isPrinting():
@@ -740,6 +758,8 @@ class MachineCom(object):
 
 		if self._currentFile is None:
 			raise ValueError("No file selected for printing")
+
+		self.cancel_called = False #reset cancelled command.
 
 		self._heatupWaitStartTime = None
 		self._heatupWaitTimeLost = 0.0

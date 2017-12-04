@@ -487,6 +487,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 			return
 		if self._selectedFile is None:
 			return
+		self._comm.cancel_called = False #reset cancelled command.
 
 		# we are happy if the average of the estimates stays within 60s of the prior one
 		threshold = settings().getFloat(["estimation", "printTime", "stableThreshold"])
@@ -1113,7 +1114,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 		payload = self._payload_for_print_job_event()
 		if payload:
 			eventManager().fire(Events.PRINT_STARTED, payload)
-			self.add_to_script_list("beforePrintStarted",
+			self.script("beforePrintStarted",
 						context=dict(event=payload),
 						must_be_set=False)
 
@@ -1123,7 +1124,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 		if payload:
 			payload["time"] = self._comm.getPrintTime()
 			eventManager().fire(Events.PRINT_DONE, payload)
-			self.add_to_script_list("afterPrintDone",
+			self.script("afterPrintDone",
 						context=dict(event=payload),
 						must_be_set=False)
 
@@ -1140,7 +1141,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 		payload = self._payload_for_print_job_event(position=self._comm.cancel_position.as_dict() if self._comm and self._comm.cancel_position else None)
 		if payload:
 			eventManager().fire(Events.PRINT_CANCELLED, payload)
-			self.add_to_script_list("afterPrintCancelled",
+			self.script("afterPrintCancelled",
 						context=dict(event=payload),
 						must_be_set=False)
 
@@ -1148,7 +1149,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 		payload = self._payload_for_print_job_event(position=self._comm.pause_position.as_dict() if self._comm and self._comm.pause_position else None)
 		if payload:
 			eventManager().fire(Events.PRINT_PAUSED, payload)
-			self.add_to_script_list("afterPrintPaused",
+			self.script("afterPrintPaused",
 						context=dict(event=payload),
 						must_be_set=False)
 
@@ -1156,7 +1157,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 		payload = self._payload_for_print_job_event()
 		if payload:
 			eventManager().fire(Events.PRINT_RESUMED, payload)
-			self.add_to_script_list("beforePrintResumed",
+			self.script("beforePrintResumed",
 						context=dict(event=payload),
 						must_be_set=False)
 
