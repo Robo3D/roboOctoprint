@@ -100,6 +100,12 @@ $(function() {
 
         self.onWizardFinish = function() {
             if (!self.decision()) {
+                if ( self.acRadio() == 'enabled' ) {
+                  console.log('Enabling ACL');
+                }
+                else {
+                  console.log('Disabling ACL');
+                }
                 return "reload";
             }
         };
