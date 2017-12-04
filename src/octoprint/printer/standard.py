@@ -261,9 +261,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 
 	@sending_item.setter
 	def sending_item(self, update):
-		self._sending_item == update
+		self._sending_item = update
 		if self._sending_item == False and len(self.script_list) != 0:
 			self.send_scripts()
+		else:
+			return
 
 	def add_to_script_list(self, name, context=None, must_be_set=True):
 		entry = {'name': name,
