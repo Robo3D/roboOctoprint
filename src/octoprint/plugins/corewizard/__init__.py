@@ -87,26 +87,26 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
         from flask import request
         from octoprint.server.api import valid_boolean_trues, NO_CONTENT
 
-        data = request.values
-        if hasattr(request, "json") and request.json:
-            data = request.json
-
-        if "ac" in data and data["ac"] in valid_boolean_trues and \
-                        "user" in data.keys() and "pass1" in data.keys() and \
-                        "pass2" in data.keys() and data["pass1"] == data["pass2"]:
-            # configure access control
-            self._settings.global_set_boolean(["accessControl", "enabled"], True)
-            self._user_manager.enable()
-            self._user_manager.addUser(data["user"], data["pass1"], True, ["user", "admin"], overwrite=True)
-        elif "ac" in data.keys() and not data["ac"] in valid_boolean_trues:
-            # disable access control
-            self._settings.global_set_boolean(["accessControl", "enabled"], False)
-
-            octoprint.server.loginManager.anonymous_user = octoprint.users.DummyUser
-            octoprint.server.principals.identity_loaders.appendleft(octoprint.users.dummy_identity_loader)
-
-            self._user_manager.disable()
-        self._settings.save()
+        # data = request.values
+        # if hasattr(request, "json") and request.json:
+        #     data = request.json
+        #
+        # if "ac" in data and data["ac"] in valid_boolean_trues and \
+        #                 "user" in data.keys() and "pass1" in data.keys() and \
+        #                 "pass2" in data.keys() and data["pass1"] == data["pass2"]:
+        #     # configure access control
+        #     self._settings.global_set_boolean(["accessControl", "enabled"], True)
+        #     self._user_manager.enable()
+        #     self._user_manager.addUser(data["user"], data["pass1"], True, ["user", "admin"], overwrite=True)
+        # elif "ac" in data.keys() and not data["ac"] in valid_boolean_trues:
+        #     # disable access control
+        #     self._settings.global_set_boolean(["accessControl", "enabled"], False)
+        #
+        #     octoprint.server.loginManager.anonymous_user = octoprint.users.DummyUser
+        #     octoprint.server.principals.identity_loaders.appendleft(octoprint.users.dummy_identity_loader)
+        #
+        #     self._user_manager.disable()
+        # self._settings.save()
         return NO_CONTENT
 
     #~~ SSH subwizard
