@@ -11,6 +11,22 @@ $(function() {
         self.setup = ko.observable(false);
         self.decision = ko.observable();
 
+        self.acRadio = ko.observable('enabled');
+
+        self.acRadio.subscribe(function (newValue) {
+          msg = 'new value:: ' + newValue;
+          console.log(msg);
+          if (newValue == 'enabled') {
+            self.setup(false);
+          }
+          else {
+            self.username(undefined);
+            self.password(undefined);
+            self.confirmedPassword(undefined);
+            self.setup(true);
+          }
+        });
+
         self.passwordMismatch = ko.pureComputed(function() {
             return self.password() != self.confirmedPassword();
         });

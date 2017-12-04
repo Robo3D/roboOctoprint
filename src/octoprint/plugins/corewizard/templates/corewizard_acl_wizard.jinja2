@@ -41,16 +41,11 @@
 </p>
 {% endtrans %}
 
-<div class="row-fluid">
+<!-- <div class="row-fluid">
     <a href="#" class="btn btn-danger span6" data-bind="click: function() { if(!setup()){disableAccessControl()}}, enable: !setup(), css: {disabled: setup()}">{{ _('Disable Access Control') }}</a>
     <a href="#" class="btn btn-primary span6" data-bind="click: function() { if(!setup()){keepAccessControl()}}, enable: !setup() && validData(), css: {disabled: !validData() || setup()}">{{ _('Keep Access Control Enabled') }}</a>
-</div>
-
-<div class="acl_decision" style="display: none" data-bind="visible: setup()">
-    <div class="text-center" style="display: none" data-bind="visible: decision()">{% trans %}
-        Access control is <strong class="text-success">enabled</strong>.
-    {% endtrans %}</div>
-    <div class="text-center" style="display: none" data-bind="visible: !decision()">{% trans %}
-        Access control is <strong class="text-danger">disabled</strong>.
-    {% endtrans %}</div>
+</div> -->
+<div class="row-fluid">
+  <input type="radio" class="" name="ac_radio" value="disabled" data-bind="checked: acRadio" id="ac_disabled"><label for="ac_disabled">Disable Access Control</label>
+  <input type="radio" class="" name="ac_radio" value="enabled" data-bind="checked: acRadio" id="ac_enabled"><label for="ac_enabled">Enable Access Control</label>
 </div>
