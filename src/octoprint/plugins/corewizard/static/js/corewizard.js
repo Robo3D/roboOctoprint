@@ -12,19 +12,20 @@ $(function() {
         self.decision = ko.observable();
 
         self.acRadio = ko.observable('enabled');
-
         self.acRadio.subscribe(function (newValue) {
-          msg = 'new value:: ' + newValue;
-          console.log(msg);
+          var msg;
           if (newValue == 'enabled') {
+            msg = 'enable Access Control';
             self.setup(false);
           }
           else {
+            msg = 'disable Access Control';
             self.username(undefined);
             self.password(undefined);
             self.confirmedPassword(undefined);
             self.setup(true);
           }
+          $('#acMsg').text(msg);
         });
 
         self.passwordMismatch = ko.pureComputed(function() {
@@ -111,6 +112,46 @@ $(function() {
         };
     }
 
+    function CoreWizardSSHViewModel(parameters){
+      var self = this;
+
+      self.settingsViewModel = parameters[0];
+
+      self.sshRadio = ko.observable('disabled');
+      self.sshRadio.subscribe(function (newValue) {
+        var msg;
+        if (newValue == 'enabled'){
+          msg = 'enable SSH';
+        }
+        else{
+          msg = 'disable SSH';
+        }
+        $('#sshMsg').text(msg);
+      });
+
+      self.enableSSH = function () {
+        if (self.sshRadio == 'enabled') {
+          var data = { "ssh": true };
+          self._sendData(data);
+        }
+      };
+
+      self._sendData = function (data) {
+        return;
+      };
+
+      self.onWizardFinish = function () {
+        if (self.sshRadio() == 'enabled') {
+          console.log('Enabling SSH!');
+        }
+        else {
+          console.log('Keeping SSH disabled!');
+        }
+        return "reload";
+      };
+
+    }
+
     function CoreWizardWebcamViewModel(parameters) {
         var self = this;
 
@@ -158,6 +199,10 @@ $(function() {
         CoreWizardAclViewModel,
         ["loginStateViewModel"],
         "#wizard_plugin_corewizard_acl"
+    ], [
+        CoreWizardSSHViewModel,
+        ['settingsViewModel'],
+        '#wizard_plugin_corewizard_ssh'
     ], [
         CoreWizardWebcamViewModel,
         ["settingsViewModel"],

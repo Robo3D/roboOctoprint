@@ -1,8 +1,7 @@
 <h3>{{ _('Setup Complete!') }}</h3>
 
 <p>{% trans %}
-  <strong>TODO make italics dynamic to actual state!</strong>
-  You've opted to <i>enable Access Control</i> and <i>disable SSH Control</i>. You can edit these from your dashboard settings.
+  You've opted to <i><span id='acMsg'>enable Access Control</span></i> and <i><span id='sshMsg'>disable SSH</span></i>. You can edit these from your dashboard settings.
 {% endtrans %}</p>
 <p>Please remember to keep your passwords stored in a safe location in case you need to refer back to them.</p>
 <p>
