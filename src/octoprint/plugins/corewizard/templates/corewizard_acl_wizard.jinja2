@@ -18,19 +18,19 @@
     <div class="control-group" data-bind="css: {success: validUsername()}">
         <label class="control-label" for="first_run_username">{{ _('Username') }}</label>
         <div class="controls">
-            <input type="text" class="input-medium" data-bind="value: username, valueUpdate: 'afterkeydown', enable: !setup(), css: {disabled: setup()}">
+            <input type="text" class="input-medium" data-bind="value: username, valueUpdate: 'afterkeydown', enable: acRadio()=='enabled', css: {disabled: !acRadio()=='enabled'}">
         </div>
     </div>
     <div class="control-group" data-bind="css: {success: validPassword()}">
         <label class="control-label" for="first_run_username">{{ _('Password') }}</label>
         <div class="controls">
-            <input type="password" class="input-medium" data-bind="value: password, valueUpdate: 'afterkeydown', enable: !setup(), css: {disabled: setup()}">
+            <input type="password" class="input-medium" data-bind="value: password, valueUpdate: 'afterkeydown', enable: acRadio()=='enabled', css: {disabled: !acRadio()=='enabled'}">
         </div>
     </div>
     <div class="control-group" data-bind="css: {error: passwordMismatch(), success: validPassword() && !passwordMismatch()}">
         <label class="control-label" for="first_run_username">{{ _('Confirm Password') }}</label>
         <div class="controls">
-            <input type="password" class="input-medium" data-bind="value: confirmedPassword, valueUpdate: 'afterkeydown', enable: !setup(), css: {disabled: setup()}">
+            <input type="password" class="input-medium" data-bind="value: confirmedPassword, valueUpdate: 'afterkeydown', enable: acRadio()=='enabled', css: {disabled: !acRadio()=='enabled'}">
             <span class="help-inline" data-bind="visible: passwordMismatch()">{{ _('Passwords do not match') }}</span>
         </div>
     </div>

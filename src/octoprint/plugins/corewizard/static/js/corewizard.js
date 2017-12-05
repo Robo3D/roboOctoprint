@@ -8,7 +8,6 @@ $(function() {
         self.password = ko.observable(undefined);
         self.confirmedPassword = ko.observable(undefined);
 
-        self.setup = ko.observable(false);
         self.decision = ko.observable();
 
         self.acRadio = ko.observable('enabled');
@@ -16,14 +15,12 @@ $(function() {
           var msg;
           if (newValue == 'enabled') {
             msg = 'enable Access Control';
-            self.setup(false);
           }
           else {
             msg = 'disable Access Control';
             self.username(undefined);
             self.password(undefined);
             self.confirmedPassword(undefined);
-            self.setup(true);
           }
           $('#acMsg').text(msg);
         });
@@ -72,7 +69,6 @@ $(function() {
         self._sendData = function(data, callback) {
             OctoPrint.postJson("plugin/corewizard/acl", data)
                 .done(function() {
-                    self.setup(true);
                     self.decision(data.ac);
                     if (data.ac) {
                         // we now log the user in
@@ -89,23 +85,42 @@ $(function() {
         };
 
         self.onBeforeWizardTabChange = function(next, current) {
-            if (!current || !_.startsWith(current, "wizard_plugin_corewizard_acl_") || self.setup()) {
+            if (!current || !_.startsWith(current, "wizard_plugin_corewizard_acl_") || self.acRadio() != 'enabled' ) {
                 return true;
             }
-            showMessageDialog({
-                title: gettext("Please set up Access Control"),
-                message: gettext("You haven't yet set up access control. You need to either setup a username and password and click \"Keep Access Control Enabled\" or click \"Disable Access Control\" before continuing")
-            });
-            return false;
+
+            if (self.acRadio()=='enabled' && !self.validData()) {
+              var results = [
+                { name: "Invalid username", isValid: self.validUsername() },
+                { name: "Invalid password", isValid: self.validPassword() },
+                { name: "Password mismatch", isValid: !self.passwordMismatch() }
+              ];
+              var msg = 'Please look over the the username and password form. ';
+              for (var i = 0; i < results.length; i++) {
+                var addition = results[i].name + " detected. ";
+                if ( !results[i].isValid ) msg += addition;
+              }
+
+              showMessageDialog({
+                  title: gettext("Please properly setup Access Control"),
+                  message: gettext(msg)
+              });
+              return false;
+            }
+            else {
+              return true;
+            }
         };
 
         self.onWizardFinish = function() {
             if (!self.decision()) {
                 if ( self.acRadio() == 'enabled' ) {
                   console.log('Enabling ACL');
+                  // self.keepAccessControl();
                 }
                 else {
                   console.log('Disabling ACL');
+                  // self.disableAccessControl();
                 }
                 return "reload";
             }
@@ -137,7 +152,10 @@ $(function() {
       };
 
       self._sendData = function (data) {
-        return;
+        OctoPrint.postJson("plugin/corewizard/ssh", data)
+          .done(function () {
+            console.log('finished sending data to ssh endpoint');
+          });
       };
 
       self.onWizardFinish = function () {
