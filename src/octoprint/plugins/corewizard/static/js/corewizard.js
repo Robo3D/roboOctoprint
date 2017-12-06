@@ -8,8 +8,22 @@ $(function() {
         self.password = ko.observable(undefined);
         self.confirmedPassword = ko.observable(undefined);
 
-        self.setup = ko.observable(false);
         self.decision = ko.observable();
+
+        self.acRadio = ko.observable('enabled');
+        self.acRadio.subscribe(function (newValue) {
+          var msg;
+          if (newValue == 'enabled') {
+            msg = 'enable Access Control';
+          }
+          else {
+            msg = 'disable Access Control';
+            self.username(undefined);
+            self.password(undefined);
+            self.confirmedPassword(undefined);
+          }
+          $('#acMsg').text(msg);
+        });
 
         self.passwordMismatch = ko.pureComputed(function() {
             return self.password() != self.confirmedPassword();
@@ -40,22 +54,15 @@ $(function() {
         };
 
         self.disableAccessControl = function() {
-            var message = gettext("If you disable Access Control <strong>and</strong> your OctoPrint installation is accessible from the internet, your printer <strong>will be accessible by everyone - that also includes the bad guys!</strong>");
-            showConfirmationDialog({
-                message: message,
-                onproceed: function (e) {
-                    var data = {
-                        "ac": false
-                    };
-                    self._sendData(data);
-                }
-            });
+          var data = { "ac": false };
+          self._sendData(data);
         };
 
         self._sendData = function(data, callback) {
+            console.log('Sending data to acl!');
             OctoPrint.postJson("plugin/corewizard/acl", data)
                 .done(function() {
-                    self.setup(true);
+                    console.log("Logging user in!!");
                     self.decision(data.ac);
                     if (data.ac) {
                         // we now log the user in
@@ -72,21 +79,94 @@ $(function() {
         };
 
         self.onBeforeWizardTabChange = function(next, current) {
-            if (!current || !_.startsWith(current, "wizard_plugin_corewizard_acl_") || self.setup()) {
+            if (!current || !_.startsWith(current, "wizard_plugin_corewizard_acl_") || self.acRadio() != 'enabled' ) {
                 return true;
             }
-            showMessageDialog({
-                title: gettext("Please set up Access Control"),
-                message: gettext("You haven't yet set up access control. You need to either setup a username and password and click \"Keep Access Control Enabled\" or click \"Disable Access Control\" before continuing")
-            });
-            return false;
+
+            if (self.acRadio()=='enabled' && !self.validData()) {
+              var results = [
+                { name: "Invalid username", isValid: self.validUsername() },
+                { name: "Invalid password", isValid: self.validPassword() },
+                { name: "Password mismatch", isValid: !self.passwordMismatch() }
+              ];
+              var msg = 'Please look over the the username and password form. ';
+              for (var i = 0; i < results.length; i++) {
+                var addition = results[i].name + " detected. ";
+                if ( !results[i].isValid ) msg += addition;
+              }
+
+              showMessageDialog({
+                  title: gettext("Please properly setup Access Control"),
+                  message: gettext(msg)
+              });
+              return false;
+            }
+            else {
+              return true;
+            }
         };
 
         self.onWizardFinish = function() {
             if (!self.decision()) {
+                if ( self.acRadio() == 'enabled' ) {
+                  console.log('Enabling ACL');
+                  self.keepAccessControl();
+                }
+                else {
+                  console.log('Disabling ACL');
+                  self.disableAccessControl();
+                }
                 return "reload";
             }
         };
+    }
+
+    function CoreWizardSSHViewModel(parameters){
+      var self = this;
+
+      self.settingsViewModel = parameters[0];
+
+      self.sshRadio = ko.observable('disabled');
+      self.sshRadio.subscribe(function (newValue) {
+        var msg;
+        if (newValue == 'enabled'){
+          msg = 'enable SSH';
+        }
+        else{
+          msg = 'disable SSH';
+        }
+        $('#sshMsg').text(msg);
+      });
+
+      self.enableSSH = function () {
+        if (self.sshRadio == 'enabled') {
+          var data = { "ssh": true };
+          self._sendData(data);
+        }
+      };
+
+      self._sendData = function (data) {
+        console.log('Sending data to ssh!');
+        OctoPrint.postJson("plugin/corewizard/ssh", data)
+          .done(function () {
+            console.log('finished sending data to ssh endpoint');
+          });
+      };
+
+      self.onWizardFinish = function () {
+        var data = {ssh: null};
+        if (self.sshRadio() == 'enabled') {
+          console.log('Enabling SSH!');
+          data.ssh = true;
+        }
+        else {
+          console.log('Keeping SSH disabled!');
+          data.ssh = false;
+        }
+        self._sendData(data);
+        return "reload";
+      };
+
     }
 
     function CoreWizardWebcamViewModel(parameters) {
@@ -136,6 +216,10 @@ $(function() {
         CoreWizardAclViewModel,
         ["loginStateViewModel"],
         "#wizard_plugin_corewizard_acl"
+    ], [
+        CoreWizardSSHViewModel,
+        ['settingsViewModel'],
+        '#wizard_plugin_corewizard_ssh'
     ], [
         CoreWizardWebcamViewModel,
         ["settingsViewModel"],
