@@ -54,16 +54,8 @@ $(function() {
         };
 
         self.disableAccessControl = function() {
-            var message = gettext("If you disable Access Control <strong>and</strong> your OctoPrint installation is accessible from the internet, your printer <strong>will be accessible by everyone - that also includes the bad guys!</strong>");
-            showConfirmationDialog({
-                message: message,
-                onproceed: function (e) {
-                    var data = {
-                        "ac": false
-                    };
-                    self._sendData(data);
-                }
-            });
+          var data = { "ac": false };
+          self._sendData(data);
         };
 
         self._sendData = function(data, callback) {
