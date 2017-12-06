@@ -59,8 +59,10 @@ $(function() {
         };
 
         self._sendData = function(data, callback) {
+            console.log('Sending data to acl!');
             OctoPrint.postJson("plugin/corewizard/acl", data)
                 .done(function() {
+                    console.log("Logging user in!!");
                     self.decision(data.ac);
                     if (data.ac) {
                         // we now log the user in
@@ -108,11 +110,11 @@ $(function() {
             if (!self.decision()) {
                 if ( self.acRadio() == 'enabled' ) {
                   console.log('Enabling ACL');
-                  // self.keepAccessControl();
+                  self.keepAccessControl();
                 }
                 else {
                   console.log('Disabling ACL');
-                  // self.disableAccessControl();
+                  self.disableAccessControl();
                 }
                 return "reload";
             }
@@ -144,6 +146,7 @@ $(function() {
       };
 
       self._sendData = function (data) {
+        console.log('Sending data to ssh!');
         OctoPrint.postJson("plugin/corewizard/ssh", data)
           .done(function () {
             console.log('finished sending data to ssh endpoint');
@@ -151,12 +154,16 @@ $(function() {
       };
 
       self.onWizardFinish = function () {
+        var data = {ssh: null};
         if (self.sshRadio() == 'enabled') {
           console.log('Enabling SSH!');
+          data.ssh = true;
         }
         else {
           console.log('Keeping SSH disabled!');
+          data.ssh = false;
         }
+        self._sendData(data);
         return "reload";
       };
 

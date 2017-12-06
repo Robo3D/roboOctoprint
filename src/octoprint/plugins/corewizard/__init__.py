@@ -87,47 +87,6 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
         from flask import request
         from octoprint.server.api import valid_boolean_trues, NO_CONTENT
 
-        # data = request.values
-        # if hasattr(request, "json") and request.json:
-        #     data = request.json
-        #
-        # if "ac" in data and data["ac"] in valid_boolean_trues and \
-        #                 "user" in data.keys() and "pass1" in data.keys() and \
-        #                 "pass2" in data.keys() and data["pass1"] == data["pass2"]:
-        #     # configure access control
-        #     self._settings.global_set_boolean(["accessControl", "enabled"], True)
-        #     self._user_manager.enable()
-        #     self._user_manager.addUser(data["user"], data["pass1"], True, ["user", "admin"], overwrite=True)
-        # elif "ac" in data.keys() and not data["ac"] in valid_boolean_trues:
-        #     # disable access control
-        #     self._settings.global_set_boolean(["accessControl", "enabled"], False)
-        #
-        #     octoprint.server.loginManager.anonymous_user = octoprint.users.DummyUser
-        #     octoprint.server.principals.identity_loaders.appendleft(octoprint.users.dummy_identity_loader)
-        #
-        #     self._user_manager.disable()
-        # self._settings.save()
-        return NO_CONTENT
-
-    #~~ SSH subwizard
-
-    def _is_ssh_wizard_required(self):
-        return self._user_manager.enabled and not self._user_manager.hasBeenCustomized()
-
-    def _get_ssh_wizard_details(self):
-        return dict()
-
-    def _get_ssh_wizard_name(self):
-        return "SSH Wizard"
-
-    def _get_ssh_additional_wizard_template_data(self):
-        return dict(mandatory=self._is_ssh_wizard_required())
-
-    @octoprint.plugin.BlueprintPlugin.route("/ssh", methods=["POST"])
-    def ssh_wizard_api(self):
-        from flask import request
-        from octoprint.server.api import valid_boolean_trues, NO_CONTENT
-
         data = request.values
         if hasattr(request, "json") and request.json:
             data = request.json
@@ -148,6 +107,51 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 
             self._user_manager.disable()
         self._settings.save()
+        return NO_CONTENT
+
+    #~~ SSH subwizard
+
+    def _is_ssh_wizard_required(self):
+        return self._user_manager.enabled and not self._user_manager.hasBeenCustomized()
+
+    def _get_ssh_wizard_details(self):
+        return dict()
+
+    def _get_ssh_wizard_name(self):
+        return "SSH Wizard"
+
+    def _get_ssh_additional_wizard_template_data(self):
+        return dict(mandatory=self._is_ssh_wizard_required())
+
+    @octoprint.plugin.BlueprintPlugin.route("/ssh", methods=["POST"])
+    def ssh_wizard_api(self):
+        import subprocess
+        from flask import request
+        from octoprint.server.api import NO_CONTENT
+
+        data = request.values
+        if hasattr(request, "json") and request.json:
+            data = request.json
+        ssh_enabled = data.get('ssh', False)
+
+        self._logger.info('ssh endpoint hit\n verdict:: {}'.format(data['ssh']))
+        enable = ['sudo', 'systemctl', 'enable', 'ssh']
+        disable = ['sudo', 'systemctl', 'disable', 'ssh']
+        start = ['sudo', 'systemctl', 'start', 'ssh']
+        stop = ['sudo', 'systemctl', 'stop', 'ssh']
+        if ssh_enabled:
+            # configure ssh
+            self._logger.info('ssh endpoint: enable ssh')
+            ec1 = subprocess.call(enable)
+            ec2 = subprocess.call(start)
+            self._logger.info('exit code: {}'.format(ec1))
+            self._logger.info('exit code: {}'.format(ec2))
+        else:
+            self._logger.info('ssh endpoint: disable ssh')
+            ec1 = subprocess.call(disable)
+            ec2 = subprocess.call(stop)
+            self._logger.info('exit code: {}'.format(ec1))
+            self._logger.info('exit code: {}'.format(ec2))
         return NO_CONTENT
 
 
