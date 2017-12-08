@@ -3,6 +3,7 @@ $(function() {
         var self = this;
 
         self.loginStateViewModel = parameters[0];
+        self.wizardViewModel = parameters[1];
 
         self.username = ko.observable(undefined);
         self.password = ko.observable(undefined);
@@ -50,7 +51,16 @@ $(function() {
                 "pass1": self.password(),
                 "pass2": self.confirmedPassword()
             };
-            self._sendData(data);
+
+            self._sendData(data, function () {
+                // Currently, login function occurs after .finishWizard gets called. this causes a 401 error that halts the execution of .finishWizard.done(). Rerun .finishWizard and .done as callback function after login completes.
+                self.wizardViewModel.wizards = ["corewizard"];
+                self.wizardViewModel.finishWizard()
+                    .done(function () {
+                        self.wizardViewModel.closeDialog();
+                        self.wizardViewModel.reloadOverlay.show();
+                    });
+            });
         };
 
         self.disableAccessControl = function() {
@@ -59,10 +69,8 @@ $(function() {
         };
 
         self._sendData = function(data, callback) {
-            console.log('Sending data to acl!');
             OctoPrint.postJson("plugin/corewizard/acl", data)
                 .done(function() {
-                    console.log("Logging user in!!");
                     self.decision(data.ac);
                     if (data.ac) {
                         // we now log the user in
@@ -109,11 +117,9 @@ $(function() {
         self.onWizardFinish = function() {
             if (!self.decision()) {
                 if ( self.acRadio() == 'enabled' ) {
-                  console.log('Enabling ACL');
                   self.keepAccessControl();
                 }
                 else {
-                  console.log('Disabling ACL');
                   self.disableAccessControl();
                 }
                 return "reload";
@@ -146,21 +152,17 @@ $(function() {
       };
 
       self._sendData = function (data) {
-        console.log('Sending data to ssh!');
         OctoPrint.postJson("plugin/corewizard/ssh", data)
           .done(function () {
-            console.log('finished sending data to ssh endpoint');
           });
       };
 
       self.onWizardFinish = function () {
         var data = {ssh: null};
         if (self.sshRadio() == 'enabled') {
-          console.log('Enabling SSH!');
           data.ssh = true;
         }
         else {
-          console.log('Keeping SSH disabled!');
           data.ssh = false;
         }
         self._sendData(data);
@@ -214,7 +216,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         CoreWizardAclViewModel,
-        ["loginStateViewModel"],
+        ["loginStateViewModel", "wizardViewModel"],
         "#wizard_plugin_corewizard_acl"
     ], [
         CoreWizardSSHViewModel,
