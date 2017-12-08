@@ -3,6 +3,7 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
+        self.usersVM = parameters[1];
 
         self.lastCommandResponse = undefined;
         self.systemActions = ko.observableArray([]);
@@ -18,6 +19,26 @@ $(function() {
 
             return OctoPrint.system.getCommands()
                 .done(self.fromCommandResponse);
+        };
+
+        self.currentUser = null;
+        self.editAccessControl = function(actions){
+            // ensures that only 1 access control option exists depending on the state of access control (enabled or disabled)
+            // :param: actions (array of objects)
+            // :returns: edited_actions(array of objects)
+            // objects have following properties: action, actionSource, confirm, name, resource, source (all strings)
+            var isAcEnabled = self.usersVM.listHelper.allSize() > 0;
+            return _.filter(actions, function (data) {
+                if ( data.action == 'aclon' ){
+                    return !isAcEnabled;
+                }
+                else if ( data.action == 'acloff' ){
+                    return isAcEnabled && self.currentUser.admin;
+                }
+                else {
+                    return true;
+                }
+            });
         };
 
         self.fromCommandResponse = function(response) {
@@ -38,7 +59,7 @@ $(function() {
                 actions.push(action);
             });
             self.lastCommandResponse = response;
-            self.systemActions(actions);
+            self.systemActions(self.editAccessControl(actions) );
         };
 
         self.triggerCommand = function(commandSpec) {
@@ -80,6 +101,7 @@ $(function() {
         };
 
         self.onUserLoggedIn = function(user) {
+            self.currentUser = user;
             if (user.admin) {
                 self.requestData();
             } else {
@@ -102,7 +124,7 @@ $(function() {
     // view model class, parameters for constructor, container to bind to
     ADDITIONAL_VIEWMODELS.push([
         SystemViewModel,
-        ["loginStateViewModel"],
+        ["loginStateViewModel", "usersViewModel"],
         []
     ]);
 });
