@@ -68,8 +68,20 @@ $(function() {
             var callback = function() {
                 OctoPrint.system.executeCommand(commandSpec.actionSource, commandSpec.action)
                     .done(function() {
-                        new PNotify({title: "Success", text: _.sprintf(gettext("The command \"%(command)s\" executed successfully"), {command: commandSpec.name}), type: "success"});
-                        deferred.resolve(["success", arguments]);
+                        if ( commandSpec.action == 'aclon' || commandSpec.action == 'acloff' ){
+                            new PNotify({title: "Success", text: _.sprintf(gettext("The command \"%(command)s\" executed successfully. Octoprint will restart automatically..."), {command: commandSpec.name}), type: "success"});
+                            deferred.resolve(["success", arguments]);
+                            self.triggerCommand({
+                                action: "restart",
+                                actionSource: "core",
+                                name: "Restart OctoPrint"
+                            });
+
+                        }
+                        else {
+                            new PNotify({title: "Success", text: _.sprintf(gettext("The command \"%(command)s\" executed successfully"), {command: commandSpec.name}), type: "success"});
+                            deferred.resolve(["success", arguments]);
+                        }
                     })
                     .fail(function(jqXHR, textStatus, errorThrown) {
                         if (!commandSpec.hasOwnProperty("ignore") || !commandSpec.ignore) {
