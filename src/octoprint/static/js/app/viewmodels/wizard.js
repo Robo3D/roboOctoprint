@@ -168,7 +168,6 @@ $(function() {
         self.finishWizard = function() {
             var deferred = $.Deferred();
             self.finishing = true;
-
             self.settingsViewModel.saveData()
                 .done(function() {
                     OctoPrint.wizard.finish(self.wizards)

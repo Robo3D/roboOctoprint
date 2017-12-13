@@ -1,0 +1,26 @@
+<h3>{{ _('SSH') }}</h3>
+
+{% trans %}
+<p>
+    <strong>Please read the following important information regarding SSH Control.</strong>
+</p>
+<p>
+    By default SSH is disabled. If you are unfamiliar with SSH we advise that you leave the printer in this default state to prevent remote users from controlling the printer.
+</p>
+<p>
+    When SSH is enabled, any user with the printer operating system's username and password can access this printer.
+    </br>
+    <strong>The printer's default username is 'pi' and the password is it's name (e.g. eager-einstein )</strong>
+</p>
+<p>
+  To change your password, log in as the user and enter 'passwd'. You'll be prompted to enter the current password to authenticate, and then enter the new password. Once correctly confirmed, you'll see the message 'passwd: password updated successfully' and the new password will be applied.
+</p>
+<p>
+  <strong>NOTE:</strong> If you lose your new password, Robo will not be able to assist you with retrieving or resetting it without reflashing the operating system. In which case, all your data will be lost. There is no need to change your password if you keep it disabled.
+</p>
+{% endtrans %}
+
+<div class="row-fluid">
+  <input type="radio" class="" name="ssh_radio" value="disabled" data-bind="checked: sshRadio" id="ssh_disabled"><label for="ssh_disabled">Disable SSH</label>
+  <input type="radio" class="" name="ssh_radio" value="enabled" data-bind="checked: sshRadio" id="ssh_enabled"><label for="ssh_enabled">Enable SSH</label>
+</div>
