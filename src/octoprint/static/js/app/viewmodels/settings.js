@@ -136,6 +136,10 @@ $(function() {
         };
         self.cmdSSH = function () {
             var data = {"ssh": !self.ssh_status_bool()};
+            new PNotify({
+                title: gettext("SSH Configuration"),
+                text: gettext("Configuring SSH...")
+            });
             OctoPrint.postJson("plugin/corewizard/ssh", data)
               .done(function () {
                   showMessageDialog({
