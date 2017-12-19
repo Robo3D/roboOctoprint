@@ -136,7 +136,6 @@ $(function() {
         };
         self.cmdSSH = function () {
             var data = {"ssh": !self.ssh_status_bool()};
-            console.log("CMD SSH");
             OctoPrint.postJson("plugin/corewizard/ssh", data)
               .done(function () {
                   showMessageDialog({
@@ -151,10 +150,8 @@ $(function() {
                   });
               })
               .always(function () {
-                  console.log("CMD SSH always!");
                   self.getSshStatus();
               });
-            console.log("CMD SSH END");
         };
         // #####################
 
