@@ -123,6 +123,13 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
     def _get_ssh_additional_wizard_template_data(self):
         return dict(mandatory=self._is_ssh_wizard_required())
 
+    @octoprint.plugin.BlueprintPlugin.route("/ssh/status", methods=["GET"])
+    def ssh_get_status(self):
+        import subprocess
+        o = subprocess.check_output(['sudo','service','ssh','status'])
+        is_enabled = 'Active: active' in o
+        return "enabled" if is_enabled else "disabled"
+
     @octoprint.plugin.BlueprintPlugin.route("/ssh", methods=["POST"])
     def ssh_wizard_api(self):
         import subprocess

@@ -32,6 +32,22 @@
 
 <button title="Add user" class="btn" data-bind="click: $root.users.showAddUserDialog"><i class="icon-plus"></i> {{ _('Add user') }}</button>
 
+<!-- Section for SSH config  -->
+<div class="" id="">
+    <div id="ssh_status">
+        SSH is currently <span data-bind="text: $root.ssh_status">Disabled</span>
+    </div>
+    <!-- <label class="radio">
+        <input type="radio" name="settings_ssh_radio" value="disabled" data-bind="checked: settings_ssh_radio" id="ssh_disabled">
+        Disable SSH
+        </label>
+    <label class="radio">
+        <input type="radio" name="settings_ssh_radio" value="enabled" data-bind="checked: settings_ssh_radio" id="ssh_enabled">
+        Enable SSH
+    </label> -->
+</div>
+
+
 <!-- Modals for user management -->
 
 <div id="settings-usersDialogAddUser" class="modal hide fade">

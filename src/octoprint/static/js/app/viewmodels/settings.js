@@ -97,6 +97,22 @@ $(function() {
         })));
         self.locale_languages = _.keys(AVAILABLE_LOCALES);
 
+        self.ssh_status = ko.observable("Loading...");
+        var common = function (r) {
+            if ( r.status == 200 ){
+                self.ssh_status(r.responseText);
+            }
+            else {
+                self.status_status("Failed to Load!");
+            }
+        };
+        // I am using .always instead of .done/.fail because .get would call and receive proper response yet would fire off .fail instead of .done... weird.
+        self.getSshStatus = function () {
+            OctoPrint.get("plugin/corewizard/ssh/status")
+                .always(common);
+        };
+
+
         self.api_enabled = ko.observable(undefined);
         self.api_key = ko.observable(undefined);
         self.api_allowCrossOrigin = ko.observable(undefined);
@@ -309,6 +325,7 @@ $(function() {
 
         self.onSettingsShown = function() {
             self.requestData();
+            self.getSshStatus();
         };
 
         self.onSettingsHidden = function() {
