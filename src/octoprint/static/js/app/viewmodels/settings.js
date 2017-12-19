@@ -149,6 +149,10 @@ $(function() {
                       title: gettext("SSH Configuration"),
                       message: gettext("Changes have unsuccessfully been processed. Please try again.")
                   });
+              })
+              .always(function () {
+                  console.log("CMD SSH always!");
+                  self.getSshStatus();
               });
             console.log("CMD SSH END");
         };
