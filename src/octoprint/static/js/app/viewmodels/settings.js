@@ -97,7 +97,30 @@ $(function() {
         })));
         self.locale_languages = _.keys(AVAILABLE_LOCALES);
 
+        // SSH ################
         self.ssh_status = ko.observable("Loading...");
+        self.ssh_status_bool = ko.computed(function () {
+            if (self.ssh_status() == "enabled") {
+                return true;
+            }
+            else if (self.ssh_status() == "disabled") {
+                return false;
+            }
+            else {
+                return null;
+            }
+        });
+        self.ssh_button = ko.computed(function () {
+            if (self.ssh_status_bool() ){
+                return "Disable SSH";
+            }
+            else if (self.ssh_status_bool() == false) {
+                return "Enable SSH";
+            }
+            else {
+                return "Failed to Load";
+            }
+        });
         var common = function (r) {
             if ( r.status == 200 ){
                 self.ssh_status(r.responseText);
@@ -111,6 +134,25 @@ $(function() {
             OctoPrint.get("plugin/corewizard/ssh/status")
                 .always(common);
         };
+        self.cmdSSH = function () {
+            var data = {"ssh": !self.ssh_status_bool()};
+            console.log("CMD SSH");
+            OctoPrint.postJson("plugin/corewizard/ssh", data)
+              .done(function () {
+                  showMessageDialog({
+                      title: gettext("SSH Configuration"),
+                      message: gettext("Changes have successfully been processed.")
+                  });
+              })
+              .fail(function () {
+                  showMessageDialog({
+                      title: gettext("SSH Configuration"),
+                      message: gettext("Changes have unsuccessfully been processed. Please try again.")
+                  });
+              });
+            console.log("CMD SSH END");
+        };
+        // #####################
 
 
         self.api_enabled = ko.observable(undefined);

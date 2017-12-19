@@ -126,9 +126,13 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
     @octoprint.plugin.BlueprintPlugin.route("/ssh/status", methods=["GET"])
     def ssh_get_status(self):
         import subprocess
-        o = subprocess.check_output(['sudo','service','ssh','status'])
-        is_enabled = 'Active: active' in o
-        return "enabled" if is_enabled else "disabled"
+        try:
+            o = subprocess.check_output(['sudo','service','ssh','status'])
+            is_enabled = 'Active: active' in o
+        except subprocess.CalledProcessError as e:
+            is_enabled = False
+        finally:
+            return "enabled" if is_enabled else "disabled"
 
     @octoprint.plugin.BlueprintPlugin.route("/ssh", methods=["POST"])
     def ssh_wizard_api(self):
