@@ -95,17 +95,18 @@ $(function() {
               var results = [
                 { name: "Invalid username", isValid: self.validUsername() },
                 { name: "Invalid password", isValid: self.validPassword() },
-                { name: "Password mismatch", isValid: !self.passwordMismatch() }
+                { name: "Passwords do not match", isValid: !self.passwordMismatch() }
               ];
-              var msg = 'Please look over the the username and password form. ';
+              var msg = 'Please look over the username and password form.</br>';
               for (var i = 0; i < results.length; i++) {
-                var addition = results[i].name + " detected. ";
+                var addition = results[i].name + "</br>";
                 if ( !results[i].isValid ) msg += addition;
               }
 
               showMessageDialog({
-                  title: gettext("Please properly setup Access Control"),
-                  message: gettext(msg)
+                  title: gettext("Enter valid username and password"),
+                  message: gettext(msg),
+                  close: "Ok"
               });
               return false;
             }
