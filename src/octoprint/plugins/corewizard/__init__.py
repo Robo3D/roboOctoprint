@@ -118,7 +118,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
         return dict()
 
     def _get_ssh_wizard_name(self):
-        return "SSH Wizard"
+        return "SSH Control"
 
     def _get_ssh_additional_wizard_template_data(self):
         return dict(mandatory=self._is_ssh_wizard_required())
