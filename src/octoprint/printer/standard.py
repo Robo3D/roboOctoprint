@@ -244,66 +244,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 		for command in commands:
 			self._comm.sendCommand(command)
 
-	#property for managing the script list
-	@property
-	def script_list(self):
-		return self._script_list
-
-	@script_list.setter
-	def script_list(self, update):
-		self._script_list.append(update)
-		self.send_scripts()
-
-	#property for managing the bool on sent item.
-	@property
-	def sending_item(self):
-		return self._sending_item
-
-	@sending_item.setter
-	def sending_item(self, update):
-		self._sending_item = update
-		if self._sending_item == False and len(self.script_list) != 0:
-			self.send_scripts()
-		else:
-			return
-
-	def add_to_script_list(self, name, context=None, must_be_set=True):
-		entry = {'name': name,
-				 'context': context,
-				 'must_be_set': must_be_set}
-
-		self.script_list = entry #this will append this entry to self._script_list and then run that script in the list.
-
-	'''
-	This function is added by robo to accomplish a few things. We noticed that when canceling a print while the start Gcode is happening
-	The Cancel script will interrupt the start GCODE and run, then the rest of the start GCODE script will run causing the printer to crash into
-	the bed. This code will put these actions in order so they wont run on top of each other.
-
-	This function will iterate over a list of dictionaries one at a time in the correct order. This is to prevent GCODE script items from running on top of 
-	one another, or running out of order. 
-	'''
-	def send_scripts(self):
-		if not self.sending_item:
-			needed_elements = ['name', 'context', 'must_be_set']
-			item = next(iter(self._script_list or []), None)
-			# If item is not none and has all of the elements listed in needed elements.
-			if item != None and len([x for x in needed_elements if (x in item)]) == len(needed_elements):
-				#set flag for sending item
-				self.sending_item = True
-				#send Script
-				self.script(item['name'], context=item['context'], must_be_set=item['must_be_set'])
-				#delete entry
-				del self._script_list[0]
-				#trigger the next item
-				self.sending_item = False
-
-			#if the element does not have the required elements delete it
-			elif len([x for x in needed_elements if (x in item)]) != len(needed_elements):
-				del self.script_list[0]
-				self.sending_item = False #trigger the next item if there is one.
-				
-
-
 	def script(self, name, context=None, must_be_set=True):
 		if self._comm is None:
 			return
