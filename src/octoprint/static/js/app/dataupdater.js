@@ -198,12 +198,22 @@ function DataUpdater(allViewModels) {
                 });
             }
         } else if (type == "Error") {
-            new PNotify({
-                    title: gettext("Unhandled communication error"),
-                    text: _.sprintf(gettext("The was an unhandled error while talking to the printer. Due to that OctoPrint disconnected. Error: %(error)s"), payload),
+            // mb
+//            if (payload.error.substr(0,19) == "Z-Offset is not set") {
+                new PNotify({
+                    title: gettext("Sanity-check warning"),
+                    text: _.sprintf(gettext("The printer reported a configuration warning and OctoPrint was disconnected as a result. Error: %(error)s"), payload),
                     type: "error",
                     hide: false
-            });
+            //     });
+            // } else {
+            //     new PNotify({
+            //         title: gettext("Unhandled communication error"),
+            //         text: _.sprintf(gettext("There was an unhandled error while talking to the printer. Due to that OctoPrint disconnected. Error: %(error)s"), payload),
+            //         type: "error",
+            //         hide: false
+            //     });
+            // }
         }
 
         var legacyEventHandlers = {
