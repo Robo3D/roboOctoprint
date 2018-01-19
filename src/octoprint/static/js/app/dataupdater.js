@@ -197,6 +197,15 @@ function DataUpdater(allViewModels) {
                     hide: false
                 });
             }
+        } else if (type == "PrintStarted") {
+            if (true) {
+                new PNotify({
+                    title: gettext("Default Z-Offset Detected"),
+                    text: gettext("Z-Offset is -20.0 which is the default configuration for this setting. Please set the Z-Offset before resuming the print."),
+                    type: "error",
+                    hide: false
+                });
+            }
         } else if (type == "Error") {
             new PNotify({
                     title: gettext("Unhandled communication error"),
