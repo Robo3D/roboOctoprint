@@ -205,7 +205,7 @@ function DataUpdater(allViewModels) {
                     text: _.sprintf(gettext("The printer reported a configuration warning and OctoPrint was disconnected as a result. Error: %(error)s"), payload),
                     type: "error",
                     hide: false
-            //     });
+                 });
             // } else {
             //     new PNotify({
             //         title: gettext("Unhandled communication error"),
