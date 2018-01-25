@@ -19,6 +19,13 @@
     </div>
 </div>
 
+<!-- ko if: printZOffsetWarningString() != "Set" -->
+<div id="zoffsetdefault-error" class="hide-error"><span title="{{ _('Status of printer based upon factory Z-Offset setting')}}">{{ _('Warning') }}</span>: <strong data-bind="text: printZOffsetWarningString"></strong></div><br>
+<script>
+setTimeout(function(){document.getElementById('zoffsetdefault-error').className = '';}, 4000);
+</script>
+<!-- /ko -->
+
 <div class="row-fluid print-control" style="display: none;" data-bind="visible: loginState.isUser">
     <button class="btn btn-primary span4" data-bind="click: print, enable: enablePrint, css: {'btn-danger': isPaused()}, attr: {title: titlePrintButton}" id="job_print"><i class="icon-white" data-bind="css: {'icon-print': !isPaused(), 'icon-undo': isPaused()}"></i> <span data-bind="text: (isPaused() ? '{{ _('Restart') }}' : '{{ _('Print') }}')">{{ _('Print') }}</span></button>
     <button class="btn span4" id="job_pause" data-bind="click: function() { isPaused() ? onlyResume() : onlyPause(); }, enable: enablePause, css: {active: isPaused()}, attr: {title: titlePauseButton}"><i data-bind="css: {'icon-pause': !isPaused(), 'icon-play': isPaused()}"></i> <span data-bind="visible: !isPaused()">{{ _('Pause') }}</span><span data-bind="visible: isPaused()">{{ _('Resume') }}</span></button>

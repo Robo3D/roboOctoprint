@@ -13,9 +13,12 @@ $(function() {
         self.isReady = ko.observable(undefined);
         self.isLoading = ko.observable(undefined);
         self.isSdReady = ko.observable(undefined);
+        //self.isZOffsetDefault = ko.observable(undefined);
 
         self.enablePrint = ko.pureComputed(function() {
-            return self.isOperational() && self.isReady() && !self.isPrinting() && self.loginState.isUser() && self.filename() != undefined;
+            // mb probably want isZOffsetDefault instead but will need to add to data dictionary and set it there
+            return self.isOperational() && self.isReady() && !self.isPrinting() && self.loginState.isUser() && self.filename() != undefined &&
+                self.printZOffsetNotDefault() == null;
         });
         self.enablePause = ko.pureComputed(function() {
             return self.isOperational() && (self.isPrinting() || self.isPaused()) && self.loginState.isUser();
@@ -34,6 +37,7 @@ $(function() {
         self.printTimeLeftOrigin = ko.observable(undefined);
         self.sd = ko.observable(undefined);
         self.timelapse = ko.observable(undefined);
+        self.printZOffsetWarningString = ko.observable(undefined);
 
         self.busyFiles = ko.observableArray([]);
 
@@ -194,6 +198,7 @@ $(function() {
             self.isError(data.flags.error);
             self.isReady(data.flags.ready);
             self.isSdReady(data.flags.sdReady);
+            //self.isZOffsetDefault(data.offsetZ == -20.0);
 
             if (self.isPaused() != prevPaused) {
                 if (self.isPaused()) {
@@ -295,6 +300,20 @@ $(function() {
                 }
             });            
         };
+
+        self.printZOffsetNotDefault = function() {
+            // A null value returned allows enablePrint() to be set, enabling the State - Print button
+            //alert('Test with ' + OctoPrint.connection);
+            return "Current Z-Offset (-20.0 mm) is the default setting. Please set the Z-Offset before trying to print: LCD Menu - Utilities - Wizards - Z-Offset.";
+            //return null;
+        };
+
+        self.printZOffsetWarningString = ko.pureComputed(function() {
+            if (!self.printZOffsetNotDefault())
+                return "Set";
+            return self.printZOffsetNotDefault();
+        });
+
     }
 
     OCTOPRINT_VIEWMODELS.push([

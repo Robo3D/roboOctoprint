@@ -356,6 +356,7 @@ class MachineCom(object):
 		#Robo edits
 		self._pause_lock = False
 		self._fire_unpause = True
+		self._z_offset_default = False
 
 		# hooks
 		self._pluginManager = octoprint.plugin.plugin_manager()
@@ -1078,6 +1079,10 @@ class MachineCom(object):
 				if line.strip() is not "":
 					self._consecutive_timeouts = 0
 					self._timeout = get_new_timeout("communication", self._timeout_intervals)
+
+				##~~ report triggered by helloCommand, try to grab the ZOffset value here
+				if line.startswith("M206 X"):
+					self._z_offset_default = "Z-20.00" in line 
 
 				##~~ debugging output handling
 				if line.startswith("//"):

@@ -403,7 +403,8 @@ $(function() {
                 return;
             }
             var withinPrintDimensions = self.evaluatePrintDimensions(file, true);
-            var print = printAfterLoad && withinPrintDimensions;
+            var printZHasBeenSet = self.evaluateZOffset(); // Can block auto-print
+            var print = printAfterLoad && withinPrintDimensions && printZHasBeenSet;
 
             OctoPrint.files.select(file.origin, file.path, print);
         };
@@ -600,6 +601,12 @@ $(function() {
             }
             return output;
         };
+
+        self.evaluateZOffset = function() {
+            // force the fail condition first, then do the lookup
+            //return false;
+            return true;
+        }
 
         self.evaluatePrintDimensions = function(data, notify) {
             if (!self.settingsViewModel.feature_modelSizeDetection()) {
