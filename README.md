@@ -50,9 +50,10 @@ user*, please keep your hands *off* of the `sudo` command here!) - this assumes
 you already have Python 2.7, pip and virtualenv set up on your system:
 
 1. Checkout OctoPrint: `git clone https://github.com/Robo3D/roboOctoprint.git`
-2. Change into the OctoPrint folder: `cd roboOctoprint`
-3. (only if build image from scratch) Create a user-owned virtual environment therein: `virtualenv oprint`
-4. Install OctoPrint *into that virtual environment*: `/home/pi/oprint/bin/python setup.py install`
+2. (only if build image from scratch) Create a user-owned virtual environment in your home directory: `virtualenv oprint`
+3. Source that virtual environment `source oprint/bin/activate`
+4. Change into the OctoPrint folder: `cd roboOctoprint`
+6. Install OctoPrint *into that virtual environment*: `python setup.py install`
 
 You may then start the OctoPrint server via `/home/pi/oprint/bin/octoprint`, see [Usage](#usage)
 for details.
