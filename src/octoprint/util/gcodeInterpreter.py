@@ -10,8 +10,7 @@ import os
 import base64
 import zlib
 import logging
-
-from octoprint.settings import settings
+import codecs
 
 
 class Vector3D(object):
@@ -172,21 +171,24 @@ class MinMax3D(object):
 
 
 class AnalysisAborted(Exception):
-	pass
+	def __init__(self, reenqueue=True, *args, **kwargs):
+		self.reenqueue = reenqueue
+		Exception.__init__(self, *args, **kwargs)
 
 
 class gcode(object):
-	def __init__(self):
+	def __init__(self, progress_callback=None):
 		self._logger = logging.getLogger(__name__)
 		self.layerList = None
 		self.extrusionAmount = [0]
 		self.extrusionVolume = [0]
 		self.totalMoveTimeMinute = 0
 		self.filename = None
-		self.progressCallback = None
 		self._abort = False
+		self._reenqueue = True
 		self._filamentDiameter = 0
 		self._minMax = MinMax3D()
+		self._progress_callback = progress_callback
 
 	@property
 	def dimensions(self):
@@ -204,62 +206,66 @@ class gcode(object):
 		            maxY=self._minMax.max.y,
 		            maxZ=self._minMax.max.z)
 
-	def load(self, filename, printer_profile, throttle=None):
+	def load(self, filename, throttle=None, speedx=6000, speedy=6000, offsets=None, max_extruders=10, g90_extruder=False):
 		if os.path.isfile(filename):
 			self.filename = filename
 			self._fileSize = os.stat(filename).st_size
 
-			import codecs
 			with codecs.open(filename, encoding="utf-8", errors="replace") as f:
-				self._load(f, printer_profile, throttle=throttle)
+				self._load(f, throttle=throttle, speedx=speedx, speedy=speedy, offsets=offsets, max_extruders=max_extruders, g90_extruder=g90_extruder)
 
-	def abort(self):
+	def abort(self, reenqueue=True):
 		self._abort = True
+		self._reenqueue = reenqueue
 
-	def _load(self, gcodeFile, printer_profile, throttle=None):
-		filePos = 0
+	def _load(self, gcodeFile, throttle=None, speedx=6000, speedy=6000, offsets=None, max_extruders=10, g90_extruder=False):
+		lineNo = 0
 		readBytes = 0
 		pos = Vector3D(0.0, 0.0, 0.0)
-		posOffset = Vector3D(0.0, 0.0, 0.0)
 		currentE = [0.0]
 		totalExtrusion = [0.0]
 		maxExtrusion = [0.0]
 		currentExtruder = 0
 		totalMoveTimeMinute = 0.0
-		absoluteE = True
+		relativeE = False
+		relativeMode = False
 		scale = 1.0
-		posAbs = True
 		fwretractTime = 0
 		fwretractDist = 0
 		fwrecoverTime = 0
-		feedrate = min(printer_profile["axes"]["x"]["speed"], printer_profile["axes"]["y"]["speed"])
+		feedrate = min(speedx, speedy)
 		if feedrate == 0:
 			# some somewhat sane default if axes speeds are insane...
 			feedrate = 2000
-		offsets = printer_profile["extruder"]["offsets"]
+
+		if offsets is None or not isinstance(offsets, (list, tuple)):
+			offsets = []
+		if len(offsets) < max_extruders:
+			offsets += [(0, 0)] * (max_extruders - len(offsets))
 
 		for line in gcodeFile:
 			if self._abort:
-				raise AnalysisAborted()
-			filePos += 1
-			readBytes += len(line)
+				raise AnalysisAborted(reenqueue=self._reenqueue)
+			lineNo += 1
+			readBytes += len(line.encode("utf-8"))
 
-			if isinstance(gcodeFile, (file)):
+			if isinstance(gcodeFile, (file, codecs.StreamReaderWriter)):
 				percentage = float(readBytes) / float(self._fileSize)
 			elif isinstance(gcodeFile, (list)):
-				percentage = float(filePos) / float(len(gcodeFile))
+				percentage = float(lineNo) / float(len(gcodeFile))
 			else:
 				percentage = None
 
 			try:
-				if self.progressCallback is not None and (filePos % 1000 == 0) and percentage is not None:
-					self.progressCallback(percentage)
+				if self._progress_callback is not None and (lineNo % 1000 == 0) and percentage is not None:
+					self._progress_callback(percentage)
 			except:
 				pass
 
 			if ';' in line:
 				comment = line[line.find(';')+1:].strip()
 				if comment.startswith("filament_diameter"):
+					# Slic3r
 					filamentValue = comment.split("=", 1)[1].strip()
 					try:
 						self._filamentDiameter = float(filamentValue)
@@ -269,6 +275,7 @@ class gcode(object):
 						except ValueError:
 							self._filamentDiameter = 0.0
 				elif comment.startswith("CURA_PROFILE_STRING") or comment.startswith("CURA_OCTO_PROFILE_STRING"):
+					# Cura 15.04.* & OctoPrint Cura plugin
 					if comment.startswith("CURA_PROFILE_STRING"):
 						prefix = "CURA_PROFILE_STRING:"
 					else:
@@ -280,6 +287,13 @@ class gcode(object):
 							self._filamentDiameter = float(curaOptions["filament_diameter"])
 						except:
 							self._filamentDiameter = 0.0
+				elif comment.startswith("filamentDiameter,"):
+					# Simplify3D
+					filamentValue = comment.split(",", 1)[1].strip()
+					try:
+						self._filamentDiameter = float(filamentValue)
+					except ValueError:
+						self._filamentDiameter = 0.0
 				line = line[0:line.find(';')]
 
 			G = getCodeInt(line, 'G')
@@ -294,26 +308,44 @@ class gcode(object):
 					e = getCodeFloat(line, 'E')
 					f = getCodeFloat(line, 'F')
 
-					oldPos = pos
-					newPos = Vector3D(x if x is not None else pos.x,
-					                  y if y is not None else pos.y,
-					                  z if z is not None else pos.z)
-
-					if posAbs:
-						pos = newPos * scale + posOffset
+					if x is not None or y is not None or z is not None:
+						# this is a move
+						move = True
 					else:
+						# print head stays on position
+						move = False
+
+					oldPos = pos
+
+					# Use new coordinates if provided. If not provided, use prior coordinates (minus tool offset)
+					# in absolute and 0.0 in relative mode.
+					newPos = Vector3D(x if x is not None else (0.0 if relativeMode else pos.x),
+					                  y if y is not None else (0.0 if relativeMode else pos.y),
+					                  z if z is not None else (0.0 if relativeMode else pos.z))
+
+					if relativeMode:
+						# Relative mode: scale and add to current position
 						pos += newPos * scale
+					else:
+						# Absolute mode: scale coordinates and apply tool offsets
+						pos = newPos * scale
+
 					if f is not None and f != 0:
 						feedrate = f
 
 					if e is not None:
-						if absoluteE:
-							# make sure e is relative
+						if relativeMode or relativeE:
+							# e is already relative, nothing to do
+							pass
+						else:
 							e -= currentE[currentExtruder]
-						# If move includes extrusion, calculate new min/max coordinates of model
-						if e > 0.0:
-							# extrusion -> relevant for print area & dimensions
+
+						# If move with extrusion, calculate new min/max coordinates of model
+						if e > 0.0 and move:
+							# extrusion and move -> oldPos & pos relevant for print area & dimensions
+							self._minMax.record(oldPos)
 							self._minMax.record(pos)
+
 						totalExtrusion[currentExtruder] += e
 						currentE[currentExtruder] += e
 						maxExtrusion[currentExtruder] = max(maxExtrusion[currentExtruder],
@@ -361,28 +393,41 @@ class gcode(object):
 						if z is not None:
 							pos.z = center.z
 				elif G == 90:	#Absolute position
-					posAbs = True
+					relativeMode = False
+					if g90_extruder:
+						relativeE = False
 				elif G == 91:	#Relative position
-					posAbs = False
+					relativeMode = True
+					if g90_extruder:
+						relativeE = True
 				elif G == 92:
 					x = getCodeFloat(line, 'X')
 					y = getCodeFloat(line, 'Y')
 					z = getCodeFloat(line, 'Z')
 					e = getCodeFloat(line, 'E')
-					if e is not None:
-						currentE[currentExtruder] = e
-					if x is not None:
-						posOffset.x = pos.x - x
-					if y is not None:
-						posOffset.y = pos.y - y
-					if z is not None:
-						posOffset.z = pos.z - z
+
+					if e is None and x is None and y is None and z is None:
+						# no parameters, set all axis to 0
+						currentE[currentExtruder] = 0.0
+						pos.x = 0.0
+						pos.y = 0.0
+						pos.z = 0.0
+					else:
+						# some parameters set, only set provided axes
+						if e is not None:
+							currentE[currentExtruder] = e
+						if x is not None:
+							pos.x = x
+						if y is not None:
+							pos.y = y
+						if z is not None:
+							pos.z = z
 
 			elif M is not None:
 				if M == 82:   #Absolute E
-					absoluteE = True
+					relativeE = False
 				elif M == 83:   #Relative E
-					absoluteE = False
+					relativeE = True
 				elif M == 207 or M == 208: #Firmware retract settings
 					s = getCodeFloat(line, 'S')
 					f = getCodeFloat(line, 'F')
@@ -394,16 +439,18 @@ class gcode(object):
 							fwrecoverTime = (fwretractDist + s) / f
 
 			elif T is not None:
-				if T > settings().getInt(["gcodeAnalysis", "maxExtruders"]):
+				if T > max_extruders:
 					self._logger.warn("GCODE tried to select tool %d, that looks wrong, ignoring for GCODE analysis" % T)
+				elif T == currentExtruder:
+					pass
 				else:
-					posOffset.x -= offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
-					posOffset.y -= offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
+					pos.x -= offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
+					pos.y -= offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
 
 					currentExtruder = T
 
-					posOffset.x += offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
-					posOffset.y += offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
+					pos.x += offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
+					pos.y += offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
 
 					if len(currentE) <= currentExtruder:
 						for i in range(len(currentE), currentExtruder + 1):
@@ -416,10 +463,9 @@ class gcode(object):
 							totalExtrusion.append(0.0)
 
 			if throttle is not None:
-				throttle()
-
-		if self.progressCallback is not None:
-			self.progressCallback(100.0)
+				throttle(lineNo, readBytes)
+		if self._progress_callback is not None:
+			self._progress_callback(100.0)
 
 		self.extrusionAmount = maxExtrusion
 		self.extrusionVolume = [0] * len(maxExtrusion)
@@ -430,6 +476,13 @@ class gcode(object):
 
 	def _parseCuraProfileString(self, comment, prefix):
 		return {key: value for (key, value) in map(lambda x: x.split("=", 1), zlib.decompress(base64.b64decode(comment[len(prefix):])).split("\b"))}
+
+	def get_result(self):
+		return dict(total_time=self.totalMoveTimeMinute,
+		            extrusion_length=self.extrusionAmount,
+		            extrusion_volume=self.extrusionVolume,
+		            dimensions=self.dimensions,
+		            printing_area=self.printing_area)
 
 def getCodeInt(line, code):
 	n = line.find(code) + 1
@@ -458,3 +511,4 @@ def getCodeFloat(line, code):
 		return val if not (math.isnan(val) or math.isinf(val)) else None
 	except:
 		return None
+

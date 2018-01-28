@@ -1,14 +1,14 @@
-.. sec-jsclientlib-util:
+.. _sec-jsclientlib-util:
 
-:mod:`OctoPrint.util`
----------------------
+:mod:`OctoPrintClient.util`
+---------------------------
 
 .. note::
 
    All methods here require that the used API token or a the existing browser session
    has admin rights.
 
-.. js:function:: OctoPrint.util.test(command, parameters, opts)
+.. js:function:: OctoPrintClient.util.test(command, parameters, opts)
 
    Execute a :ref:`test command <sec-api-util-test>`.
 
@@ -19,9 +19,9 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.util.testPath(path, additional, opts)
+.. js:function:: OctoPrintClient.util.testPath(path, additional, opts)
 
-   Test the provided ``path`` for existance. More test criteria supported by the :ref:`path test command <sec-api-util-test-path>`
+   Test the provided ``path`` for existence. More test criteria supported by the :ref:`path test command <sec-api-util-test-path>`
    can be provided via the ``additional`` object.
 
    **Example 1**
@@ -59,7 +59,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.util.testExecutable(path, opts)
+.. js:function:: OctoPrintClient.util.testExecutable(path, opts)
 
    Shortcut to test if a provided ``path`` exists and is executable by OctoPrint.
 
@@ -95,7 +95,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.util.testUrl(url, additional, opts)
+.. js:function:: OctoPrintClient.util.testUrl(url, additional, opts)
 
    Test if a URL can be accessed. More test criteria supported by the :ref:`URL test command <sec-api-util-test-url>`
    can be provided via the ``additional`` object.
@@ -126,8 +126,16 @@
           .done(function(response) {
               if (response.result) {
                   // check passed
+                  var content = response.response.content;
+                  var mimeType = "image/jpeg";
+
+                  var headers = response.response.headers;
+                  if (headers && headers["content-type"]) {
+                      mimeType = headers["content-type"].split(";")[0];
+                  }
+
                   var image = $("#someimage");
-                  image.
+                  image.src = "data:" + mimeType + ";base64," + content;
               } else {
                   // check failed
               }
@@ -149,6 +157,48 @@
           });
 
    :param string url: URL to test
+   :param object additional: Additional parameters for the test command
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
+.. js:function:: OctoPrintClient.util.testServer(host, port, additional, opts)
+
+   Test if a server is reachable. More options supported by the :ref:`server test command <sec-api-util-test-server>`
+   can be provided via the ``additional`` object.
+
+   **Example 1**
+
+   Test if ``8.8.8.8`` is reachable on port 53 within the default timeout.
+
+   .. code-block:: javascript
+
+      OctoPrint.util.testServer("8.8.8.8", 53)
+          .done(function(response) {
+              if (response.result) {
+                  // check passed
+              } else {
+                  // check failed
+              }
+          });
+
+   **Example 2**
+
+   Test if ``127.0.0.1`` is reachable on port 1234 and UDP.
+
+   .. code-block:: javascript
+
+      OctoPrint.util.testUrl("127.0.0.1", 1234, {"protocol": "udp"})
+          .done(function(response) {
+              if (response.result) {
+                  // check passed
+              } else {
+                  // check failed
+              }
+          });
+
+
+   :param string url: Host to test
+   :param int port: Port to test
    :param object additional: Additional parameters for the test command
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response

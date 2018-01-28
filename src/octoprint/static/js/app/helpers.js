@@ -162,6 +162,12 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         return undefined;
     };
 
+    self.resetPage = function() {
+        if (self.currentPage() > self.lastPage()) {
+            self.currentPage(self.lastPage());
+        }
+    };
+
     //~~ searching
 
     self.changeSearchFunction = function(searchFunction) {
@@ -392,7 +398,7 @@ function formatFuzzyPrintTime(totalSeconds) {
      *
      * Accuracy decreases the higher the estimation is:
      *
-     *   * less than 30s: "a couple of seconds"
+     *   * less than 30s: "a few seconds"
      *   * 30s to a minute: "less than a minute"
      *   * 1 to 30min: rounded to full minutes, above 30s is minute + 1 ("27 minutes", "2 minutes")
      *   * 30min to 40min: "40 minutes"
@@ -410,7 +416,7 @@ function formatFuzzyPrintTime(totalSeconds) {
     var seconds = d.seconds();
     var minutes = d.minutes();
     var hours = d.hours();
-    var days = d.asDays();
+    var days = d.days();
 
     var replacements = {
         days: days,
@@ -426,11 +432,16 @@ function formatFuzzyPrintTime(totalSeconds) {
         // days
         if (hours >= 16) {
             replacements.days += 1;
-            text = gettext("%(days)d days");
+
+            if (replacements.days === 1) {
+                text = gettext("%(days)d day");
+            } else {
+                text = gettext("%(days)d days");
+            }
         } else if (hours >= 8 && hours < 16) {
             text = gettext("%(days)d.5 days");
         } else {
-            if (days == 1) {
+            if (days === 1) {
                 text = gettext("%(days)d day");
             } else {
                 text = gettext("%(days)d days");
@@ -441,7 +452,7 @@ function formatFuzzyPrintTime(totalSeconds) {
         if (hours < 12) {
             if (minutes < 15) {
                 // less than .15 => .0
-                if (hours == 1) {
+                if (hours === 1) {
                     text = gettext("%(hours)d hour");
                 } else {
                     text = gettext("%(hours)d hours");
@@ -452,10 +463,15 @@ function formatFuzzyPrintTime(totalSeconds) {
             } else {
                 // over .75 => hours + 1
                 replacements.hours += 1;
-                text = gettext("%(hours)d hours");
+
+                if (replacements.hours === 1) {
+                    text = gettext("%(hours)d hour");
+                } else {
+                    text = gettext("%(hours)d hours");
+                }
             }
         } else {
-            if (hours == 23 && minutes > 30) {
+            if (hours === 23 && minutes > 30) {
                 // over 23.5 hours => 1 day
                 text = gettext("1 day");
             } else {
@@ -489,7 +505,7 @@ function formatFuzzyPrintTime(totalSeconds) {
     } else {
         // only seconds
         if (seconds < 30) {
-            text = gettext("a couple of seconds");
+            text = gettext("a few seconds");
         } else {
             text = gettext("less than a minute");
         }
@@ -518,12 +534,14 @@ function formatFilament(filament) {
 }
 
 function cleanTemperature(temp) {
-    if (!temp || temp < 10) return gettext("off");
+    if (temp === undefined || !_.isNumber(temp)) return "-";
+    if (temp < 10) return gettext("off");
     return temp;
 }
 
 function formatTemperature(temp, showF) {
-    if (!temp || temp < 10) return gettext("off");
+    if (temp === undefined || !_.isNumber(temp)) return "-";
+    if (temp < 10) return gettext("off");
     if (showF) {
         return _.sprintf("%.1f&deg;C (%.1f&deg;F)", temp, temp * 9 / 5 + 32);
     } else {
@@ -640,6 +658,7 @@ function showConfirmationDialog(msg, onacknowledge, options) {
     var proceed = options.proceed || gettext("Proceed");
     var proceedClass = options.proceedClass || "danger";
     var onproceed = options.onproceed || undefined;
+    var onclose = options.onclose || undefined;
     var dialogClass = options.dialogClass || "";
 
     var modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
@@ -657,21 +676,196 @@ function showConfirmationDialog(msg, onacknowledge, options) {
         .append($('<div></div>').addClass('modal-header').append(modalHeader))
         .append($('<div></div>').addClass('modal-body').append(modalBody))
         .append($('<div></div>').addClass('modal-footer').append(cancelButton).append(proceedButton));
+    modal.on('hidden', function(event) {
+        if (onclose && _.isFunction(onclose)) {
+            onclose(event);
+        }
+    });
     modal.modal("show");
 
     proceedButton.click(function(e) {
         e.preventDefault();
-        modal.modal("hide");
         if (onproceed && _.isFunction(onproceed)) {
             onproceed(e);
         }
+        modal.modal("hide");
     });
+
+    return modal;
+}
+
+/**
+ * Shows a progress modal depending on a supplied promise.
+ *
+ * Will listen to the supplied promise, update the progress on .progress events and
+ * enabling the close button and (optionally) closing the dialog on promise resolve.
+ *
+ * The calling code should call "notify" on the deferred backing the promise and supply:
+ *
+ *   * the text to display on the progress bar and the optional output field and
+ *     a boolean value indicating whether the operation behind that update was successful or not
+ *   * a short text to display on the progress bar, a long text to display on the optional output
+ *     field and a boolean value indicating whether the operation behind that update was
+ *     successful or not
+ *
+ * Non-successful progress updates will remove the barClassSuccess class from the progress bar and
+ * apply the barClassFailure class and also apply the outputClassFailure to the produced line
+ * in the output.
+ *
+ * To determine the progress, calling code should supply the prognosed maximum number of
+ * progress events. An internal counter will increment on each progress event and used together
+ * with the max value to calculate the percentage to display on the progress bar.
+ *
+ * If no max value is set, the progress bar will show a striped animation at 100% fill status
+ * to visualize "unknown but ongoing" status.
+ *
+ * Available options:
+ *
+ *   * title: the title of the modal, defaults to "Progress"
+ *   * message: the message of the modal, defaults to ""
+ *   * buttonText: the text on the close button, defaults to "Close"
+ *   * max: maximum number of expected progress events (when 100% will be reached), defaults
+ *     to undefined
+ *   * close: whether to close the dialog on completion, defaults to false
+ *   * output: whether to display the progress texts in an output field, defaults to false
+ *   * dialogClass: additional class to apply to the dialog div
+ *   * barClassSuccess: additional class for the progress bar while all progress events are
+ *     successful
+ *   * barClassFailure: additional class for the progress bar when a progress event was
+ *     unsuccessful
+ *   * outputClassSuccess: additional class for successful output lines
+ *   * outputClassFailure: additional class for unsuccessful output lines
+ *
+ * @param options modal options
+ * @param promise promise to monitor
+ * @returns {*|jQuery} the modal object
+ */
+function showProgressModal(options, promise) {
+    var title = options.title || gettext("Progress");
+    var message = options.message || "";
+    var buttonText = options.button || gettext("Close");
+    var max = options.max || undefined;
+    var close = options.close || false;
+    var output = options.output || false;
+
+    var dialogClass = options.dialogClass || "";
+    var barClassSuccess = options.barClassSuccess || "";
+    var barClassFailure = options.barClassFailure || "bar-danger";
+    var outputClassSuccess = options.outputClassSuccess || "";
+    var outputClassFailure = options.outputClassFailure || "text-error";
+
+    var modalHeader = $('<h3>' + title + '</h3>');
+    var paragraph = $('<p>' + message + '</p>');
+
+    var progress = $('<div class="progress progress-text-centered"></div>');
+    var progressBar = $('<div class="bar"></div>')
+        .addClass(barClassSuccess);
+    var progressTextBack = $('<span class="progress-text-back"></span>');
+    var progressTextFront = $('<span class="progress-text-front"></span>')
+        .width(progress.width());
+
+    if (max == undefined) {
+        progress.addClass("progress-striped active");
+        progressBar.width("100%");
+    }
+
+    progressBar
+        .append(progressTextFront);
+    progress
+        .append(progressTextBack)
+        .append(progressBar);
+
+    var button = $('<button class="btn">' + buttonText + '</button>')
+        .prop("disabled", true)
+        .attr("data-dismiss", "modal")
+        .attr("aria-hidden", "true");
+
+    var modalBody = $('<div></div>')
+        .addClass('modal-body')
+        .append(paragraph)
+        .append(progress);
+
+    var pre;
+    if (output) {
+        pre = $("<pre class='pre-scrollable pre-output' style='height: 70px; font-size: 0.8em'></pre>");
+        modalBody.append(pre);
+    }
+
+    var modal = $('<div></div>')
+        .addClass('modal hide fade')
+        .addClass(dialogClass)
+        .append($('<div></div>').addClass('modal-header').append(modalHeader))
+        .append(modalBody)
+        .append($('<div></div>').addClass('modal-footer').append(button));
+    modal.modal({keyboard: false, backdrop: "static", show: true});
+
+    var counter = 0;
+    promise
+        .progress(function() {
+            var short, long, success;
+            if (arguments.length === 2) {
+                short = long = arguments[0];
+                success = arguments[1];
+            } else if (arguments.length === 3) {
+                short = arguments[0];
+                long = arguments[1];
+                success = arguments[2];
+            } else {
+                throw Error("Invalid parameters for showProgressModal, expected either (text, success) or (short, long, success)");
+            }
+
+            var value;
+
+            if (max === undefined || max <= 0) {
+                value = 100;
+            } else {
+                counter++;
+                value = Math.max(Math.min(counter * 100 / max, 100), 0);
+            }
+
+            // update progress bar
+            progressBar.width(String(value) + "%");
+            progressTextFront.text(short);
+            progressTextBack.text(short);
+            progressTextFront.width(progress.width());
+
+            // if not successful, apply failure class
+            if (!success && !progressBar.hasClass(barClassFailure)) {
+                progressBar
+                    .removeClass(barClassSuccess)
+                    .addClass(barClassFailure);
+            }
+
+            if (output && pre) {
+                if (success) {
+                    pre.append($("<span class='" + outputClassSuccess + "'>" + long + "</span>"));
+                } else {
+                    pre.append($("<span class='" + outputClassFailure + "'>" + long + "</span>"));
+                }
+                pre.scrollTop(pre[0].scrollHeight - pre.height());
+            }
+        })
+        .done(function() {
+            button.prop("disabled", false);
+            if (close) {
+                modal.modal("hide");
+            }
+        })
+        .fail(function() {
+            button.prop("disabled", false);
+        });
 
     return modal;
 }
 
 function showReloadOverlay() {
     $("#reloadui_overlay").show();
+}
+
+function wrapPromiseWithAlways(p) {
+    var deferred = $.Deferred();
+    p.always(function() { deferred.resolve.apply(deferred, arguments); });
+    return deferred.promise();
 }
 
 function commentableLinesToArray(lines) {
@@ -799,14 +993,65 @@ function getOnlyChangedData(data, oldData) {
     return f(data, oldData);
 }
 
+function setOnViewModels(allViewModels, key, value) {
+    setOnViewModelsIf(allViewModels, key, value, undefined);
+}
+
+function setOnViewModelsIf(allViewModels, key, value, condition) {
+    if (!allViewModels) return;
+    _.each(allViewModels, function(viewModel) {
+        setOnViewModelIf(viewModel, key, value, condition);
+    })
+}
+
+function setOnViewModel(viewModel, key, value) {
+    setOnViewModelIf(viewModel, key, value, undefined);
+}
+
+function setOnViewModelIf(viewModel, key, value, condition) {
+    if (condition === undefined || !_.isFunction(condition)) {
+        condition = function() { return true; };
+    }
+
+    try {
+        if (!condition(viewModel)) {
+            return;
+        }
+
+        viewModel[key] = value;
+    } catch (exc) {
+        log.error("Error while setting", key, "to", value, "on view model", viewModel.constructor.name, ":", (exc.stack || exc));
+    }
+}
+
 function callViewModels(allViewModels, method, callback) {
     callViewModelsIf(allViewModels, method, undefined, callback);
 }
 
 function callViewModelsIf(allViewModels, method, condition, callback) {
-    if (condition == undefined || !_.isFunction(condition)) {
+    if (!allViewModels) return;
+
+    _.each(allViewModels, function(viewModel) {
+        try {
+            callViewModelIf(viewModel, method, condition, callback);
+        } catch (exc) {
+            log.error("Error calling", method, "on view model", viewModel.constructor.name, ":", (exc.stack || exc));
+        }
+    });
+}
+
+function callViewModel(viewModel, method, callback, raiseErrors) {
+    callViewModelIf(viewModel, method, undefined, callback, raiseErrors);
+}
+
+function callViewModelIf(viewModel, method, condition, callback, raiseErrors) {
+    raiseErrors = raiseErrors === true || false;
+
+    if (condition === undefined || !_.isFunction(condition)) {
         condition = function() { return true; };
     }
+
+    if (!viewModel.hasOwnProperty(method) || !condition(viewModel, method)) return;
 
     var parameters = undefined;
     if (!_.isFunction(callback)) {
@@ -814,14 +1059,14 @@ function callViewModelsIf(allViewModels, method, condition, callback) {
         // call the view model method instead of providing it to the callback
         // - let's figure out how
 
-        if (callback == undefined) {
+        if (callback === undefined) {
             // directly call view model method with no parameters
             parameters = undefined;
-            log.trace("Calling method", method, "on view models");
+            log.trace("Calling method", method, "on view model");
         } else if (_.isArray(callback)) {
             // directly call view model method with these parameters
             parameters = callback;
-            log.trace("Calling method", method, "on view models with specified parameters", parameters);
+            log.trace("Calling method", method, "on view model with specified parameters", parameters);
         } else {
             // ok, this doesn't make sense, callback is neither undefined nor
             // an array, we'll return without doing anything
@@ -832,29 +1077,29 @@ function callViewModelsIf(allViewModels, method, condition, callback) {
         // the method directly
         callback = undefined;
     } else {
-        log.trace("Providing method", method, "on view models to specified callback", callback);
+        log.trace("Providing method", method, "on view model to specified callback", callback);
     }
 
-    _.each(allViewModels, function(viewModel) {
-        if (viewModel.hasOwnProperty(method) && condition(viewModel, method)) {
-            try {
-                if (callback == undefined) {
-                    if (parameters != undefined) {
-                        // call the method with the provided parameters
-                        viewModel[method].apply(viewModel, parameters);
-                    } else {
-                        // call the method without parameters
-                        viewModel[method]();
-                    }
-                } else {
-                    // provide the method to the callback
-                    callback(viewModel[method], viewModel);
-                }
-            } catch (exc) {
-                log.error("Error calling", method, "on view model", viewModel.constructor.name, ":", (exc.stack || exc));
+    try {
+        if (callback === undefined) {
+            if (parameters !== undefined) {
+                // call the method with the provided parameters
+                viewModel[method].apply(viewModel, parameters);
+            } else {
+                // call the method without parameters
+                viewModel[method]();
             }
+        } else {
+            // provide the method to the callback
+            callback(viewModel[method], viewModel);
         }
-    });
+    } catch (exc) {
+        if (raiseErrors) {
+            throw exc;
+        } else {
+            log.error("Error calling", method, "on view model", viewModel.constructor.name, ":", (exc.stack || exc));
+        }
+    }
 }
 
 var sizeObservable = function(observable) {
@@ -882,4 +1127,46 @@ var getQueryParameterByName = function(name, url) {
     if (!results) return null;
     if (!results[2]) return '';
     return decodeURIComponent(results[2].replace(/\+/g, " "));
+};
+
+/**
+ * Escapes unprintable ASCII characters in the provided string.
+ *
+ * E.g. turns a null byte in the string into "\x00".
+ *
+ * Characters 0 to 31 excluding 9, 10 and 13 will be escaped, as will
+ * 127 and 255. That should leave printable characters and unicode
+ * alone.
+ *
+ * Originally based on
+ * https://gist.github.com/mathiasbynens/1243213#gistcomment-53590
+ *
+ * @param str The string to escape
+ * @returns {string}
+ */
+var escapeUnprintableCharacters = function(str) {
+    var result = "";
+    var index = 0;
+    var charCode;
+
+    while (!isNaN(charCode = str.charCodeAt(index))) {
+        if ((charCode < 32 && charCode != 9 && charCode != 10 && charCode != 13) || charCode == 127 || charCode == 255) {
+            // special hex chars
+            result += "\\x" + (charCode > 15 ? "" : "0") + charCode.toString(16)
+        } else {
+            // anything else
+            result += str[index];
+        }
+
+        index++;
+    }
+    return result;
+};
+
+var copyToClipboard = function(text) {
+    var temp = $("<textarea>");
+    $("body").append(temp);
+    temp.val(text).select();
+    document.execCommand("copy");
+    temp.remove();
 };

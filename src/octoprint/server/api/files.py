@@ -29,6 +29,8 @@ import threading
 _file_cache = dict()
 _file_cache_mutex = threading.RLock()
 
+_DATA_FORMAT_VERSION = "v2"
+
 def _clear_file_cache():
 	with _file_cache_mutex:
 		_file_cache.clear()
@@ -63,7 +65,7 @@ def _create_lastmodified(path, recursive):
 		return None
 
 
-def _create_etag(path, recursive, lm=None):
+def _create_etag(path, filter, recursive, lm=None):
 	if lm is None:
 		lm = _create_lastmodified(path, recursive)
 
@@ -72,31 +74,32 @@ def _create_etag(path, recursive, lm=None):
 
 	hash = hashlib.sha1()
 	hash.update(str(lm))
+	hash.update(str(filter))
 	hash.update(str(recursive))
 
 	if path.endswith("/files") or path.endswith("/files/sdcard"):
 		# include sd data in etag
 		hash.update(repr(sorted(printer.get_sd_files(), key=lambda x: x[0])))
 
+	hash.update(_DATA_FORMAT_VERSION) # increment version if we change the API format
+
 	return hash.hexdigest()
 
 
 @api.route("/files", methods=["GET"])
 @with_revalidation_checking(etag_factory=lambda lm=None: _create_etag(request.path,
+                                                                      request.values.get("filter", False),
                                                                       request.values.get("recursive", False),
                                                                       lm=lm),
                             lastmodified_factory=lambda: _create_lastmodified(request.path,
                                                                               request.values.get("recursive", False)),
                             unless=lambda: request.values.get("force", False) or request.values.get("_refresh", False))
 def readGcodeFiles():
-	filter = request.values.get("filter", "false") in valid_boolean_trues
+	filter = request.values.get("filter", False)
 	recursive = request.values.get("recursive", "false") in valid_boolean_trues
 	force = request.values.get("force", "false") in valid_boolean_trues
 
-	if force:
-		_clear_file_cache()
-
-	files = _getFileList(FileDestinations.LOCAL, filter=filter, recursive=recursive)
+	files = _getFileList(FileDestinations.LOCAL, filter=filter, recursive=recursive, allow_from_cache=not force)
 	files.extend(_getFileList(FileDestinations.SDCARD))
 
 	usage = psutil.disk_usage(settings().getBaseFolder("uploads"))
@@ -105,6 +108,7 @@ def readGcodeFiles():
 
 @api.route("/files/<string:origin>", methods=["GET"])
 @with_revalidation_checking(etag_factory=lambda lm=None: _create_etag(request.path,
+                                                                      request.values.get("filter", False),
                                                                       request.values.get("recursive", False),
                                                                       lm=lm),
                             lastmodified_factory=lambda: _create_lastmodified(request.path,
@@ -114,17 +118,11 @@ def readGcodeFilesForOrigin(origin):
 	if origin not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
 		return make_response("Unknown origin: %s" % origin, 404)
 
+	filter = request.values.get("filter", False)
 	recursive = request.values.get("recursive", "false") in valid_boolean_trues
 	force = request.values.get("force", "false") in valid_boolean_trues
 
-	if force:
-		with _file_cache_mutex:
-			try:
-				del _file_cache[origin]
-			except KeyError:
-				pass
-
-	files = _getFileList(origin, recursive=recursive)
+	files = _getFileList(origin, filter=filter, recursive=recursive, allow_from_cache=not force)
 
 	if origin == FileDestinations.LOCAL:
 		usage = psutil.disk_usage(settings().getBaseFolder("uploads"))
@@ -144,7 +142,7 @@ def _getFileDetails(origin, path, recursive=True):
 		return None
 
 
-def _getFileList(origin, path=None, filter=None, recursive=False):
+def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cache=True):
 	if origin == FileDestinations.SDCARD:
 		sdFileList = printer.get_sd_files()
 
@@ -154,6 +152,7 @@ def _getFileList(origin, path=None, filter=None, recursive=False):
 				file = {
 					"type": "machinecode",
 					"name": sdFile,
+					"display": sdFile,
 					"path": sdFile,
 					"origin": FileDestinations.SDCARD,
 					"refs": {
@@ -169,11 +168,12 @@ def _getFileList(origin, path=None, filter=None, recursive=False):
 			filter_func = lambda entry, entry_data: octoprint.filemanager.valid_file_type(entry, type=filter)
 
 		with _file_cache_mutex:
-			files, lastmodified = _file_cache.get("{}:{}:{}:{}".format(origin, path, recursive, filter), ([], None))
-			if lastmodified is None or lastmodified < fileManager.last_modified(origin, path=path, recursive=recursive):
+			cache_key = "{}:{}:{}:{}".format(origin, path, recursive, filter)
+			files, lastmodified = _file_cache.get(cache_key, ([], None))
+			if not allow_from_cache or lastmodified is None or lastmodified < fileManager.last_modified(origin, path=path, recursive=recursive):
 				files = fileManager.list_files(origin, path=path, filter=filter_func, recursive=recursive)[origin].values()
 				lastmodified = fileManager.last_modified(origin, path=path, recursive=recursive)
-				_file_cache["{}:{}:{}:{}".format(origin, path, recursive, filter)] = (files, lastmodified)
+				_file_cache[cache_key] = (files, lastmodified)
 
 		def analyse_recursively(files, path=None):
 			if path is None:
@@ -248,8 +248,8 @@ def _verifyFolderExists(origin, foldername):
 
 
 def _isBusy(target, path):
-	currentOrigin, currentFilename = _getCurrentFile()
-	if currentFilename is not None and currentOrigin == target and fileManager.file_in_path(FileDestinations.LOCAL, path, currentFilename) and (printer.is_printing() or printer.is_paused()):
+	currentOrigin, currentPath = _getCurrentFile()
+	if currentPath is not None and currentOrigin == target and fileManager.file_in_path(FileDestinations.LOCAL, path, currentPath) and (printer.is_printing() or printer.is_paused()):
 		return True
 
 	return any(target == x[0] and fileManager.file_in_path(FileDestinations.LOCAL, path, x[1]) for x in fileManager.get_busy_files())
@@ -289,22 +289,14 @@ def uploadGcodeFile(target):
 			if not printer.is_sd_ready():
 				return make_response("Can not upload to SD card, not yet initialized", 409)
 
-		# determine current job
-		currentPath = None
-		currentFilename = None
-		currentOrigin = None
-		currentJob = printer.get_current_job()
-		if currentJob is not None and "file" in currentJob.keys():
-			currentJobFile = currentJob["file"]
-			if currentJobFile is not None and "name" in currentJobFile.keys() and "origin" in currentJobFile.keys() and currentJobFile["name"] is not None and currentJobFile["origin"] is not None:
-				currentPath, currentFilename = fileManager.sanitize(FileDestinations.LOCAL, currentJobFile["name"])
-				currentOrigin = currentJobFile["origin"]
-
 		# determine future filename of file to be uploaded, abort if it can't be uploaded
 		try:
 			# FileDestinations.LOCAL = should normally be target, but can't because SDCard handling isn't implemented yet
-			futurePath, futureFilename = fileManager.sanitize(FileDestinations.LOCAL, upload.filename)
+			canonPath, canonFilename = fileManager.canonicalize(FileDestinations.LOCAL, upload.filename)
+			futurePath = fileManager.sanitize_path(FileDestinations.LOCAL, canonPath)
+			futureFilename = fileManager.sanitize_name(FileDestinations.LOCAL, canonFilename)
 		except:
+			canonFilename = None
 			futurePath = None
 			futureFilename = None
 
@@ -316,8 +308,13 @@ def uploadGcodeFile(target):
 			futurePath = fileManager.sanitize_path(FileDestinations.LOCAL, request.values["path"])
 
 		# prohibit overwriting currently selected file while it's being printed
-		if futurePath == currentPath and futureFilename == currentFilename and target == currentOrigin and (printer.is_printing() or printer.is_paused()):
-			return make_response("Trying to overwrite file that is currently being printed: %s" % currentFilename, 409)
+		futureFullPath = fileManager.join_path(FileDestinations.LOCAL, futurePath, futureFilename)
+		futureFullPathInStorage = fileManager.path_in_storage(FileDestinations.LOCAL, futureFullPath)
+
+		if not printer.can_modify_file(futureFullPathInStorage, sd):
+			return make_response("Trying to overwrite file that is currently being printed: %s" % futureFullPath, 409)
+
+		reselect = printer.is_current_file(futureFullPathInStorage, sd)
 
 		def fileProcessingFinished(filename, absFilename, destination):
 			"""
@@ -327,7 +324,7 @@ def uploadGcodeFile(target):
 			Depending on the file's destination triggers either streaming to SD card or directly calls selectAndOrPrint.
 			"""
 
-			if destination == FileDestinations.SDCARD and octoprint.filemanager.valid_file_type(filename, "gcode"):
+			if destination == FileDestinations.SDCARD and octoprint.filemanager.valid_file_type(filename, "machinecode"):
 				return filename, printer.add_sd_file(filename, absFilename, selectAndOrPrint)
 			else:
 				selectAndOrPrint(filename, absFilename, destination)
@@ -342,13 +339,13 @@ def uploadGcodeFile(target):
 			Selects the just uploaded file if either selectAfterUpload or printAfterSelect are True, or if the
 			exact file is already selected, such reloading it.
 			"""
-			if octoprint.filemanager.valid_file_type(added_file, "gcode") and (selectAfterUpload or printAfterSelect or (currentFilename == filename and currentOrigin == destination)):
+			if octoprint.filemanager.valid_file_type(added_file, "gcode") and (selectAfterUpload or printAfterSelect or reselect):
 				printer.select_file(absFilename, destination == FileDestinations.SDCARD, printAfterSelect)
 
-		futureFullPath = fileManager.join_path(FileDestinations.LOCAL, futurePath, futureFilename)
-
 		try:
-			added_file = fileManager.add_file(FileDestinations.LOCAL, futureFullPath, upload, allow_overwrite=True)
+			added_file = fileManager.add_file(FileDestinations.LOCAL, futureFullPathInStorage, upload,
+			                                  allow_overwrite=True,
+			                                  display=canonFilename)
 		except octoprint.filemanager.storage.StorageError as e:
 			if e.code == octoprint.filemanager.storage.StorageError.INVALID_FILE:
 				return make_response("Could not upload the file \"{}\", invalid type".format(upload.filename), 400)
@@ -414,7 +411,9 @@ def uploadGcodeFile(target):
 		if not target in [FileDestinations.LOCAL]:
 			return make_response("Unknown target: %s" % target, 400)
 
-		futurePath, futureName = fileManager.sanitize(target, foldername)
+		canonPath, canonName = fileManager.canonicalize(target, foldername)
+		futurePath = fileManager.sanitize_path(target, canonPath)
+		futureName = fileManager.sanitize_name(target, canonName)
 		if not futureName or not futurePath:
 			return make_response("Can't create a folder with an empty name", 400)
 
@@ -427,7 +426,7 @@ def uploadGcodeFile(target):
 			return make_response("Can't create a folder named %s, please try another name" % futureName, 409)
 
 		try:
-			added_folder = fileManager.add_folder(target, futureFullPath)
+			added_folder = fileManager.add_folder(target, futureFullPath, display=canonName)
 		except octoprint.filemanager.storage.StorageError as e:
 			if e.code == octoprint.filemanager.storage.StorageError.INVALID_DIRECTORY:
 				return make_response("Could not create folder {}, invalid directory".format(futureName))
@@ -477,6 +476,7 @@ def gcodeFileCommand(filename, target):
 	valid_commands = {
 		"select": [],
 		"slice": [],
+		"analyse": [],
 		"copy": ["destination"],
 		"move": ["destination"]
 	}
@@ -552,6 +552,14 @@ def gcodeFileCommand(filename, target):
 			if path:
 				full_path = fileManager.join_path(target, path, destination)
 
+		canon_path, canon_name = fileManager.canonicalize(target, full_path)
+		sanitized_name = fileManager.sanitize_name(target, canon_name)
+
+		if canon_path:
+			full_path = fileManager.join_path(target, canon_path, sanitized_name)
+		else:
+			full_path = sanitized_name
+
 		# prohibit overwriting the file that is currently being printed
 		currentOrigin, currentFilename = _getCurrentFile()
 		if currentFilename == full_path and currentOrigin == target and (printer.is_printing() or printer.is_paused()):
@@ -608,6 +616,7 @@ def gcodeFileCommand(filename, target):
 			                  printer_profile_id=printerProfile,
 			                  position=position,
 			                  overrides=overrides,
+			                  display=canon_name,
 			                  callback=slicing_done,
 			                  callback_args=(target, full_path, select_after_slicing, print_after_slicing))
 		except octoprint.slicing.UnknownProfile:
@@ -616,8 +625,9 @@ def gcodeFileCommand(filename, target):
 		files = {}
 		location = url_for(".readGcodeFile", target=target, filename=full_path, _external=True)
 		result = {
-			"name": destination,
+			"name": sanitized_name,
 			"path": full_path,
+			"display": canon_name,
 			"origin": FileDestinations.LOCAL,
 			"refs": {
 				"resource": location,
@@ -629,6 +639,17 @@ def gcodeFileCommand(filename, target):
 		r.headers["Location"] = location
 		return r
 
+	elif command == "analyse":
+		if not _verifyFileExists(target, filename):
+			return make_response("File not found on '%s': %s" % (target, filename), 404)
+
+		printer_profile = None
+		if "printerProfile" in data and data["printerProfile"]:
+			printer_profile = data["printerProfile"]
+
+		if not fileManager.analyse(target, filename, printer_profile_id=printer_profile):
+			return make_response("No analysis possible for {} on {}".format(filename, target), 400)
+
 	elif command == "copy" or command == "move":
 		# Copy and move are only possible on local storage
 		if not target in [FileDestinations.LOCAL]:
@@ -638,14 +659,15 @@ def gcodeFileCommand(filename, target):
 			return make_response("File or folder not found on {}: {}".format(target, filename), 404)
 
 		path, name = fileManager.split_path(target, filename)
-		destination = data["destination"]
-		if _verifyFolderExists(target, destination):
-			# destination is an existing folder, we'll assume we are supposed to move filename to this
-			# folder under the same name
-			destination = fileManager.join_path(target, destination, name)
 
-		if _verifyFileExists(target, destination) or _verifyFolderExists(target, destination):
-			return make_response("File or folder does already exist on {}: {}".format(target, destination), 409)
+		destination = data["destination"]
+		dst_path, dst_name = fileManager.split_path(target, destination)
+		sanitized_destination = fileManager.join_path(target, dst_path, fileManager.sanitize_name(target, dst_name))
+
+		if _verifyFolderExists(target, destination) and sanitized_destination != filename:
+			# destination is an existing folder and not ourselves (= display rename), we'll assume we are supposed
+			# to move filename to this folder under the same name
+			destination = fileManager.join_path(target, destination, name)
 
 		is_file = fileManager.file_exists(target, filename)
 		is_folder = fileManager.folder_exists(target, filename)
@@ -654,13 +676,23 @@ def gcodeFileCommand(filename, target):
 			return make_response("{} on {} is neither file or folder, can't {}".format(filename, target, command), 400)
 
 		if command == "copy":
+			# destination already there? error...
+			if _verifyFileExists(target, destination) or _verifyFolderExists(target, destination):
+				return make_response("File or folder does already exist on {}: {}".format(target, destination), 409)
+
 			if is_file:
 				fileManager.copy_file(target, filename, destination)
 			else:
 				fileManager.copy_folder(target, filename, destination)
+
 		elif command == "move":
 			if _isBusy(target, filename):
 				return make_response("Trying to move a file or folder that is currently in use: {}".format(filename), 409)
+
+			# destination already there AND not ourselves (= display rename)? error...
+			if (_verifyFileExists(target, destination) or _verifyFolderExists(target, destination)) \
+					and sanitized_destination != filename:
+				return make_response("File or folder does already exist on {}: {}".format(target, destination), 409)
 
 			# deselect the file if it's currently selected
 			currentOrigin, currentFilename = _getCurrentFile()
@@ -705,8 +737,8 @@ def deleteGcodeFile(filename, target):
 			return make_response("Trying to delete a file that is currently in use: %s" % filename, 409)
 
 		# deselect the file if it's currently selected
-		currentOrigin, currentFilename = _getCurrentFile()
-		if currentFilename is not None and currentOrigin == target and filename == currentFilename:
+		currentOrigin, currentPath = _getCurrentFile()
+		if currentPath is not None and currentOrigin == target and filename == currentPath:
 			printer.unselect_file()
 
 		# delete it
@@ -723,8 +755,8 @@ def deleteGcodeFile(filename, target):
 			return make_response("Trying to delete a folder that contains a file that is currently in use: %s" % filename, 409)
 
 		# deselect the file if it's currently selected
-		currentOrigin, currentFilename = _getCurrentFile()
-		if currentFilename is not None and currentOrigin == target and fileManager.file_in_path(target, filename, currentFilename):
+		currentOrigin, currentPath = _getCurrentFile()
+		if currentPath is not None and currentOrigin == target and fileManager.file_in_path(target, filename, currentPath):
 			printer.unselect_file()
 
 		# delete it
@@ -734,8 +766,8 @@ def deleteGcodeFile(filename, target):
 
 def _getCurrentFile():
 	currentJob = printer.get_current_job()
-	if currentJob is not None and "file" in currentJob.keys() and "name" in currentJob["file"] and "origin" in currentJob["file"]:
-		return currentJob["file"]["origin"], currentJob["file"]["name"]
+	if currentJob is not None and "file" in currentJob.keys() and "path" in currentJob["file"] and "origin" in currentJob["file"]:
+		return currentJob["file"]["origin"], currentJob["file"]["path"]
 	else:
 		return None, None
 

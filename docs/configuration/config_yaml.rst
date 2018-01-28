@@ -285,8 +285,12 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # to false.
        okWithLinenumber: false
 
-       # Number of extruders to simulate on the virtual printer.
+       # Number of extruders to simulate on the virtual printer. Map from tool id (0, 1, ...) to temperature
+       # in °C
        numExtruders: 1
+
+       # Allows pinning certain hotends to a fixed temperature
+       pinnedExtruders: null
 
        # Whether to include the current tool temperature in the M105 output as separate T segment or not.
        #
@@ -303,13 +307,6 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # False: > M23 filename.gcode
        #        > File opened
        includeFilenameInOpened: true
-
-       # The maximum movement speeds of the simulated printer's axes, in mm/s
-       movementSpeed:
-         x: 6000
-         y: 6000
-         z: 200
-         e: 300
 
        # Whether the simulated printer should also simulate a heated bed or not
        hasBed: true
@@ -330,6 +327,18 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # If enabled, uses repetier style resends, sending multiple resends for the same line
        # to make sure nothing gets lost on the line
        repetierStyleResends: false
+
+       # If enabled, ok will be sent before a commands output, otherwise after or inline (M105)
+       #
+       # True:  > M20
+       #        < ok
+       #        < Begin file list
+       #        < End file list
+       # False: > M20
+       #        < Begin file list
+       #        < End file list
+       #        < ok
+       okBeforeCommandOutput: false
 
        # If enabled, reports the first extruder in M105 responses as T instead of T0
        #
@@ -358,7 +367,8 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # side will block
        rxBuffer: 64
 
-       # Size of simulated command buffer
+       # Size of simulated command buffer, number of commands. If full, buffered commands will block
+       # until a slot frees up
        commandBuffer: 4
 
        # Whether to support the M112 command with simulated kill
@@ -369,6 +379,58 @@ The following settings are only relevant to you if you want to do OctoPrint deve
 
        # Whether to simulate broken M29 behaviour (missing ok after response)
        brokenM29: true
+
+       # Whether F is supported as individual command
+       supportF: false
+
+       # Firmware name to report (useful for testing firmware detection)
+       firmwareName: Virtual Marlin 1.0
+
+       # Simulate a shared nozzle
+       sharedNozzle: false
+
+       # Send "busy" messages if busy processing something
+       sendBusy: false
+
+       # Simulate a reset on connect
+       simulateReset: true
+
+       # Lines to send on simulated reset
+       resetLines:
+       - start
+       - Marlin: Virtual Marlin!
+       - "\x80"
+       - "SD card ok"
+
+       # Initial set of prepared oks to use instead of regular ok (e.g. to simulate
+       # mis-sent oks). Can also be filled at runtime via the debug command prepare_ok
+       preparedOks: []
+
+       # Format string for ok response.
+       #
+       # Placeholders:
+       # - lastN: last acknowledged line number
+       # - buffer: empty slots in internal command buffer
+       #
+       # Example format string for "extended" ok format:
+       #   ok N{lastN} P{buffer}
+       okFormatString: ok
+
+       # Format string for M115 output.
+       #
+       # Placeholders:
+       # - firmare_name: The firmware name as defined in firmwareName
+       m115FormatString: "FIRMWARE_NAME: {firmware_name} PROTOCOL_VERSION:1.0"
+
+       # Whether to include capability report in M115 output
+       m115ReportCapabilites: false
+
+       # Capabilities to report if capability report is enabled
+       capabilities:
+         AUTOREPORT_TEMP: true
+
+       # Simulated ambient temperature in °C
+       ambientTemperature: 21.3
 
 .. _sec-configuration-config_yaml-estimation:
 
@@ -519,6 +581,23 @@ Use the following settings to enable or disable OctoPrint features:
      # If ignoredIdenticalResends is true, how many consecutive identical resends to ignore
      identicalResendsCount: 7
 
+     # Whether to support F on its own as a valid GCODE command (true) or not (false)
+     supportFAsCommand: false
+
+     # Whether to enable model size detection and warning (true) or not (false)
+     modelSizeDetection: true
+
+     # Whether to attempt to auto detect the firmware of the printer and adjust settings
+     # accordingly (true) or not and rely on manual configuration (false)
+     firmwareDetection: true
+
+     # Whether to show a confirmation on print cancelling (true) or not (false)
+     printCancelConfirmation: true
+
+     # Whether to block all sending to the printer while a G4 (dwell) command is active (true, repetier)
+     # or not (false)
+     blockWhileDwelling: false
+
 .. _sec-configuration-config_yaml-folder:
 
 Folder
@@ -564,6 +643,45 @@ Use the following settings to set custom paths for folders used by OctoPrint:
 
      # Absolute path where to store (GCODE) scripts
      scripts: /path/to/scripts/folder
+
+.. _sec-configuration-config_yaml-gcodeanalysis:
+
+GCODE Analysis
+--------------
+
+Settings pertaining to the server side GCODE analysis implementation.
+
+.. code-block:: yaml
+
+   # Maximum number of extruders to support/to sanity check for
+   maxExtruders: 10
+
+   # Pause between each processed GCODE line in normal priority mode, seconds
+   throttle_normalprio: 0.01
+
+   # Pause between each processed GCODE line in high priority mode (e.g. on fresh
+   # uploads), seconds
+   throttle_highprio: 0.0
+
+.. _sec-configuration-config_yaml-gcodeviewer:
+
+GCODE Viewer
+------------
+
+Settings pertaining to the built in GCODE Viewer.
+
+.. code-block:: yaml
+
+   # Whether to enable the GCODE viewer in the UI
+   enabled: true
+
+   # Maximum size a GCODE file may have on mobile devices to automatically be loaded
+   # into the viewer, defaults to 2MB
+   mobileSizeThreshold: 2097152
+
+   # Maximum size a GCODE file may have to automatically be loaded into the viewer,
+   # defaults to 20MB
+   sizeThreshold: 20971520
 
 .. _sec-configuration-config_yaml-plugins:
 
@@ -679,8 +797,34 @@ Use the following settings to configure the serial connection to the printer:
        connection: 2
 
        # Timeout during serial communication, in seconds.
-       # Defaults to 5 sec
-       communication: 5
+       # Defaults to 30 sec
+       communication: 30
+
+       # Timeout after which to query temperature when no target is set
+       temperature: 5
+
+       # Timeout after which to query temperature when a target is set
+       temperatureTargetSet: 2
+
+       # Timeout after which to query the SD status while SD printing
+       sdStatus: 1
+
+     # Maximum number of consecutive communication timeouts after which the printer will be considered
+     # dead and OctoPrint disconnects with an error.
+     maxCommunicationTimeouts:
+
+       # max. timeouts when the printer is idle
+       idle: 2
+
+       # max. timeouts when the printer is printing
+       printing: 5
+
+       # max. timeouts when a long running command is active
+       long: 5
+
+     # Maximum number of write attempts to serial during which nothing can be written before the communication
+     # with the printer is considered dead and OctoPrint will disconnect with an error
+     maxWritePasses:
 
      # Use this to define additional patterns to consider for serial port listing. Must be a valid
      # "glob" pattern (see http://docs.python.org/2/library/glob.html). Defaults to not set.
@@ -702,6 +846,7 @@ Use the following settings to configure the serial connection to the printer:
      - G32
      - M400
      - M226
+     - M600
 
      # Commands which need to always be send with a checksum. Defaults to only M110
      checksumRequiringCommands:
@@ -710,7 +855,12 @@ Use the following settings to configure the serial connection to the printer:
      # Command to send in order to initiate a handshake with the printer.
      # Defaults to "M110 N0" which simply resets the line numbers in the firmware and which
      # should be acknowledged with a simple "ok".
-     helloCommand: M110 N0
+     helloCommand:
+     - M110 N0
+
+     # Commands that should never be auto-uppercased when sent to the printer. Defaults to only M117.
+     autoUppercaseBlacklist:
+     - M117
 
      # Whether to disconnect on errors or not
      disconnectOnErrors: true
@@ -746,9 +896,13 @@ Use the following settings to configure the server:
      # Use this option to define the port to which to bind the server, defaults to 5000
      port: 5000
 
-     # If this option is true, OctoPrint will show the First Run dialog and set it to false after that
-     # completes
+     # If this option is true, OctoPrint will show the First Run wizard and set the setting to
+     # false after that completes
      firstRun: false
+
+     # If this option is true, OctoPrint will enable safe mode on the next server start and
+     # reset the setting to false
+     startOnceInSafeMode: false
 
      # Secret key for encrypting cookies and such, randomly generated on first run
      secretKey: someSecretKey
@@ -822,6 +976,31 @@ Use the following settings to configure the server:
        # Command to shut down the system OctoPrint is running on, defaults to being unset
        systemShutdownCommand: sudo shutdown -h now
 
+     # Configuration of the regular online connectivity check
+     onlineCheck:
+       # whether the online check is enabled, defaults to false due to valid privacy concerns
+       enabled: false
+
+       # interval in which to check for online connectivity (in seconds)
+       interval: 300
+
+       # DNS host against which to check (default: 8.8.8.8 aka Google's DNS)
+       host: 8.8.8.8
+
+       # DNS port against which to check (default: 53 - the default DNS port)
+       port: 53
+
+     # Configuration of the plugin blacklist
+     pluginBlacklist:
+       # whether use of the blacklist is enabled, defaults to false
+       enabled: false
+
+       # the URL from which to fetch the blacklist
+       url: http://plugins.octoprint.org/blacklist.json
+
+       # time to live of the cached blacklist, in seconds (default: 15 minutes)
+       ttl: 15 * 60
+
      # Settings of when to display what disk space warning
      diskspace:
 
@@ -856,8 +1035,8 @@ Use the following settings to configure the server:
      * ``X-Scheme``: should contain your custom URL scheme to use (if different from ``http``), e.g. ``https``
 
    If you use these headers OctoPrint will work both via the reverse proxy as well as when called directly. Take a look
-   `into OctoPrint's wiki <https://github.com/foosel/OctoPrint/wiki/Reverse-proxy-configuration-examples>`_ for a couple
-   of examples on how to configure this.
+   `into OctoPrint's wiki <https://github.com/foosel/OctoPrint/wiki/Reverse-proxy-configuration-examples>`_ for some
+   examples on how to configure this.
 
 .. _sec-configuration-config_yaml-slicing:
 
@@ -944,10 +1123,12 @@ Use `Javascript regular expressions <https://developer.mozilla.org/en/docs/Web/J
 
    # A list of filters to display in the terminal tab. Defaults to the filters shown below
    terminalFilters:
-   - name: Suppress M105 requests/responses
-     regex: '(Send: M105)|(Recv: ok T:)'
-   - name: Suppress M27 requests/responses
-     regex: '(Send: M27)|(Recv: SD printing byte)'
+   - name: Suppress temperature messages
+     regex: '(Send: (N\d+\s+)?M105)|(Recv: ok T:)'
+   - name: Suppress SD status messages
+     regex: '(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)'
+   - name: Suppress wait responses
+     regex: 'Recv: wait'
 
 .. _sec-configuration-config_yaml-webcam:
 
@@ -981,22 +1162,42 @@ Use the following settings to configure webcam support:
      # Whether to include a "created with OctoPrint" watermark in the generated timelapse movies
      watermark: true
 
+     # Whether to flip the webcam horizontally
+     flipH: false
+
+     # Whether to flip the webcam vertically
+     flipV: false
+
+     # Whether to rotate the webcam 90° counter clockwise
+     rotate90: false
+
      # The default timelapse settings.
      timelapse:
 
        # The timelapse type. Can be either "off", "zchange" or "timed". Defaults to "off"
        type: timed
 
+       # The framerate at which to render the movie
+       fps: 25
+
+       # The number of seconds in the rendered video to add after a finished print. The exact way how the
+       # additional images will be recorded depends on timelapse type. Timed timelapses continue to
+       # record just like at the beginning, so the recording will continue another
+       # fps * postRoll * interval seconds. Zchange timelapses will take one final picture and add it fps * postRoll
+       postRoll: 0
+
        # Additional options depending on the timelapse type. All timelapses take a postRoll and an fps setting.
        options:
-         # The number of seconds in the rendered video to add after a finished print. The exact way how the
-         # additional images will be recorded depends on timelapse type. Timed timelapses continue to
-         # record just like at the beginning, so the recording will continue another
-         # fps * postRoll * interval seconds. Zchange timelapses will take one final picture and add it fps * postRoll
-         postRoll: 0
-
-         # The framerate at which to render the movie
-         fps: 25
 
          # Timed timelapses only: The interval which to leave between images in seconds
          interval: 2
+
+         # Timed timelapses only: Whether to capture the snapshots for the post roll (true) or just copy
+         # the last captured snapshot from the print over and over again (false)
+         capturePostRoll: true
+
+         # ZChange timelapses only: Z-hop height during retractions to ignore for capturing snapshots
+         retractionZHop: 0.0
+
+     # After how many days unrendered timelapses will be deleted
+     cleanTmpAfterDays: 7

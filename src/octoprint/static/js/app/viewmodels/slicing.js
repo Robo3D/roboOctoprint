@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.printerProfiles = parameters[1];
+        self.printerState = parameters[2];
 
         self.file = ko.observable(undefined);
         self.target = undefined;
@@ -14,7 +15,7 @@ $(function() {
         self.defaultProfile = undefined;
 
         self.destinationFilename = ko.observable();
-        self.gcodeFilename = self.destinationFilename; // TODO: for backwards compatiblity, mark deprecated ASAP
+        self.gcodeFilename = self.destinationFilename; // TODO: for backwards compatibility, mark deprecated ASAP
 
         self.title = ko.observable();
         self.slicer = ko.observable();
@@ -22,6 +23,8 @@ $(function() {
         self.profile = ko.observable();
         self.profiles = ko.observableArray();
         self.printerProfile = ko.observable();
+
+        self.slicerSameDevice = ko.observable();
 
         self.allViewModels = undefined;
 
@@ -73,6 +76,19 @@ $(function() {
             self.profile(undefined);
         };
 
+        self.metadataForSlicer = function(key) {
+            if (key == undefined || !self.data.hasOwnProperty(key)) {
+                return;
+            }
+
+            var slicer = self.data[key];
+            self.slicerSameDevice(slicer.sameDevice);
+        };
+
+        self.resetMetadata = function() {
+            self.slicerSameDevice(true);
+        };
+
         self.configuredSlicers = ko.pureComputed(function() {
             return _.filter(self.slicers(), function(slicer) {
                 return slicer.configured;
@@ -110,23 +126,28 @@ $(function() {
         ];
         self.afterSlicing = ko.observable("none");
 
-        self.show = function(target, file, force, path) {
+        self.show = function(target, file, force, path, options) {
+            options = options || {};
+
             if (!self.enableSlicingDialog() && !force) {
                 return;
             }
 
-            var filename = file.substr(0, file.lastIndexOf("."));
+            var filename = file;
             if (filename.lastIndexOf("/") != 0) {
                 path = path || filename.substr(0, filename.lastIndexOf("/"));
                 filename = filename.substr(filename.lastIndexOf("/") + 1);
             }
 
+            var display = options.display || filename;
+            var destination = display.substr(0, display.lastIndexOf("."));
+
             self.requestData();
             self.target = target;
             self.file(file);
             self.path = path;
-            self.title(_.sprintf(gettext("Slicing %(filename)s"), {filename: filename}));
-            self.destinationFilename(filename);
+            self.title(_.sprintf(gettext("Slicing %(filename)s"), {filename: display}));
+            self.destinationFilename(destination);
             self.printerProfile(self.printerProfiles.currentProfile());
             self.afterSlicing("none");
 
@@ -136,8 +157,10 @@ $(function() {
         self.slicer.subscribe(function(newValue) {
             if (newValue === undefined) {
                 self.resetProfiles();
+                self.resetMetadata();
             } else {
                 self.profilesForSlicer(newValue);
+                self.metadataForSlicer(newValue);
             }
         });
 
@@ -153,7 +176,20 @@ $(function() {
             return self.destinationFilename() != undefined
                 && self.destinationFilename().trim() != ""
                 && self.slicer() != undefined
-                && self.profile() != undefined;
+                && self.profile() != undefined
+                && (!(self.printerState.isPrinting() || self.printerState.isPaused()) || !self.slicerSameDevice());
+        });
+
+        self.sliceButtonTooltip = ko.pureComputed(function() {
+            if (!self.enableSliceButton()) {
+                if ((self.printerState.isPrinting() || self.printerState.isPaused()) && self.slicerSameDevice()) {
+                    return gettext("Cannot slice on the same device while printing");
+                } else {
+                    return gettext("Cannot slice, not all parameters specified");
+                }
+            } else {
+                return gettext("Start the slicing process");
+            }
         });
 
         self.requestData = function() {
@@ -204,7 +240,8 @@ $(function() {
                     name: name,
                     configured: slicer.configured,
                     sourceExtensions: slicer.extensions.source,
-                    destinationExtensions: slicer.extensions.destination
+                    destinationExtensions: slicer.extensions.destination,
+                    sameDevice: slicer.sameDevice
                 };
                 self.slicers.push(props);
             });
@@ -217,7 +254,11 @@ $(function() {
         };
 
         self.slice = function() {
-            var destinationFilename = self._sanitize(self.destinationFilename());
+            if (!self.enableSliceButton()) {
+                return;
+            }
+
+            var destinationFilename = self.destinationFilename();
 
             var destinationExtensions = self.data[self.slicer()] && self.data[self.slicer()].extensions && self.data[self.slicer()].extensions.destination
                                         ? self.data[self.slicer()].extensions.destination
@@ -272,9 +313,9 @@ $(function() {
         };
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        SlicingViewModel,
-        ["loginStateViewModel", "printerProfilesViewModel"],
-        "#slicing_configuration_dialog"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: SlicingViewModel,
+        dependencies: ["loginStateViewModel", "printerProfilesViewModel", "printerStateViewModel"],
+        elements: ["#slicing_configuration_dialog"]
+    });
 });

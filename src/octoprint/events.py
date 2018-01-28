@@ -27,9 +27,10 @@ def all_events():
 
 
 class Events(object):
-	# application startup
+	# server
 	STARTUP = "Startup"
 	SHUTDOWN = "Shutdown"
+	CONNECTIVITY_CHANGED = "ConnectivityChanged"
 
 	# connect/disconnect to printer
 	CONNECTING = "Connecting"
@@ -39,6 +40,7 @@ class Events(object):
 
 	# State changes
 	PRINTER_STATE_CHANGED = "PrinterStateChanged"
+	PRINTER_RESET = "PrinterReset"
 
 	# connect/disconnect by client
 	CLIENT_OPENED = "ClientOpened"
@@ -53,9 +55,15 @@ class Events(object):
 	METADATA_ANALYSIS_FINISHED = "MetadataAnalysisFinished"
 	METADATA_STATISTICS_UPDATED = "MetadataStatisticsUpdated"
 
+	FILE_ADDED = "FileAdded"
+	FILE_REMOVED = "FileRemoved"
+	FOLDER_ADDED = "FolderAdded"
+	FOLDER_REMOVED = "FolderRemoved"
+
 	# SD Upload
 	TRANSFER_STARTED = "TransferStarted"
 	TRANSFER_DONE = "TransferDone"
+	TRANSFER_FAILED = "TransferFailed"
 
 	# print job
 	PRINT_STARTED = "PrintStarted"
@@ -79,6 +87,7 @@ class Events(object):
 	EJECT = "Eject"
 	E_STOP = "EStop"
 	POSITION_UPDATE = "PositionUpdate"
+	TOOL_CHANGE = "ToolChange"
 	REGISTERED_MESSAGE_RECEIVED = "RegisteredMessageReceived"
 
 	# Timelapse
@@ -125,9 +134,11 @@ class EventManager(object):
 		self._registeredListeners = collections.defaultdict(list)
 		self._logger = logging.getLogger(__name__)
 
+		self._startup_signaled = False
 		self._shutdown_signaled = False
 
 		self._queue = queue.Queue()
+		self._held_back = queue.Queue()
 
 		self._worker = threading.Thread(target=self._work)
 		self._worker.daemon = True
@@ -154,7 +165,8 @@ class EventManager(object):
 
 				octoprint.plugin.call_plugin(octoprint.plugin.types.EventHandlerPlugin,
 				                             "on_event",
-				                             args=(event, payload))
+				                             args=(event, payload),
+				                             initialized=True)
 			self._logger.info("Event loop shut down")
 		except:
 			self._logger.exception("Ooops, the event bus worker loop crashed")
@@ -170,7 +182,30 @@ class EventManager(object):
 		payload being a payload object specific to the event.
 		"""
 
-		self._queue.put((event, payload))
+		send_held_back = False
+		if event == Events.STARTUP:
+			self._logger.info("Processing startup event, this is our first event")
+			self._startup_signaled = True
+			send_held_back = True
+
+		self._enqueue(event, payload)
+
+		if send_held_back:
+			self._logger.info("Adding {} events to queue that "
+			                  "were held back before startup event".format(self._held_back.qsize()))
+			while True:
+				try:
+					self._queue.put(self._held_back.get(block=False))
+				except queue.Empty:
+					break
+
+	def _enqueue(self, event, payload):
+		if self._startup_signaled:
+			q = self._queue
+		else:
+			q = self._held_back
+
+		q.put((event, payload))
 
 		if event == Events.UPDATED_FILES and "type" in payload and payload["type"] == "printables":
 			# when sending UpdatedFiles with type "printables", also send another event with deprecated type "gcode"
@@ -178,7 +213,7 @@ class EventManager(object):
 			import copy
 			legacy_payload = copy.deepcopy(payload)
 			legacy_payload["type"] = "gcode"
-			self._queue.put((event, legacy_payload))
+			q.put((event, legacy_payload))
 
 	def subscribe(self, event, callback):
 		"""
@@ -332,24 +367,34 @@ class CommandTrigger(GenericEventListener):
 			self._executeGcodeCommand(command, debug=debug)
 
 	def _executeSystemCommand(self, command, debug=False):
-		def commandExecutioner(command):
+		def commandExecutioner(cmd):
 			if debug:
-				self._logger.info("Executing system command: %s" % command)
+				self._logger.info("Executing system command: {}".format(cmd))
+			else:
+				self._logger.info("Executing a system command")
 			# we run this with shell=True since we have to trust whatever
 			# our admin configured as command and since we want to allow
 			# shell-alike handling here...
-			subprocess.Popen(command, shell=True)
+			subprocess.check_call(cmd, shell=True)
 
-		try:
-			if isinstance(command, (list, tuple, set)):
-				for c in command:
-					commandExecutioner(c)
-			else:
-				commandExecutioner(command)
-		except subprocess.CalledProcessError as e:
-			self._logger.warn("Command failed with return code %i: %s" % (e.returncode, str(e)))
-		except:
-			self._logger.exception("Command failed")
+		def process():
+			try:
+				if isinstance(command, (list, tuple, set)):
+					for c in command:
+						commandExecutioner(c)
+				else:
+					commandExecutioner(command)
+			except subprocess.CalledProcessError as e:
+				if debug:
+					self._logger.warn("Command failed with return code {}: {}".format(e.returncode, str(e)))
+				else:
+					self._logger.warn("Command failed with return code {}, enable debug logging on target 'octoprint.events' for details".format(e.returncode))
+			except:
+				self._logger.exception("Command failed")
+
+		t = threading.Thread(target=process)
+		t.daemon = True
+		t.start()
 
 	def _executeGcodeCommand(self, command, debug=False):
 		commands = [command]
@@ -361,7 +406,7 @@ class CommandTrigger(GenericEventListener):
 
 	def _processCommand(self, command, payload):
 		"""
-		Performs string substitutions in the command string based on a couple of current parameters.
+		Performs string substitutions in the command string based on a few current parameters.
 
 		The following substitutions are currently supported:
 
@@ -397,7 +442,7 @@ class CommandTrigger(GenericEventListener):
 
 		currentData = self._printer.get_current_data()
 
-		if "currentZ" in currentData.keys() and currentData["currentZ"] is not None:
+		if "currentZ" in currentData and currentData["currentZ"] is not None:
 			params["__currentZ"] = str(currentData["currentZ"])
 
 		if "job" in currentData and "file" in currentData["job"] and "name" in currentData["job"]["file"] \
@@ -405,9 +450,9 @@ class CommandTrigger(GenericEventListener):
 			params["__filename"] = currentData["job"]["file"]["name"]
 			params["__filepath"] = currentData["job"]["file"]["path"]
 			params["__fileorigin"] = currentData["job"]["file"]["origin"]
-			if "progress" in currentData.keys() and currentData["progress"] is not None \
-				and "completion" in currentData["progress"].keys() and currentData["progress"]["completion"] is not None:
-				params["__progress"] = str(round(currentData["progress"]["completion"] * 100))
+			if "progress" in currentData and currentData["progress"] is not None \
+				and "completion" in currentData["progress"] and currentData["progress"]["completion"] is not None:
+				params["__progress"] = str(round(currentData["progress"]["completion"]))
 
 		# now add the payload keys as well
 		if isinstance(payload, dict):

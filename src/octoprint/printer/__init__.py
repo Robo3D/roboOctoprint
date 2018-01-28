@@ -25,6 +25,7 @@ import re
 
 from octoprint.settings import settings
 from octoprint.util import deprecated
+from octoprint.filemanager import FileDestinations
 
 
 @deprecated(message="get_connection_options has been replaced by PrinterInterface.get_connection_options",
@@ -198,7 +199,7 @@ class PrinterInterface(object):
 
 	def set_temperature_offset(self, offsets=None):
 		"""
-		Sets the temperature ``offsets`` to apply to target temperatures red from a GCODE file while printing.
+		Sets the temperature ``offsets`` to apply to target temperatures read from a GCODE file while printing.
 
 		Arguments:
 		    offsets (dict): A dictionary specifying the offsets to apply. Keys must match the format for the ``heater``
@@ -227,17 +228,80 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
+	def can_modify_file(self, path, sd):
+		"""
+		Determines whether the ``path`` (on the printer's SD if ``sd`` is True) may be modified (updated or deleted)
+		or not.
+
+		A file that is currently being printed is not allowed to be modified. Any other file or the current file
+		when it is not being printed is fine though.
+
+		:since: 1.3.2
+
+		.. warning::
+
+		   This was introduced in 1.3.2 to work around an issue when updating a file that is already selected.
+		   I'm not 100% sure at this point if this is the best approach to solve this issue, so if you decide
+		   to depend on this particular method in this interface, be advised that it might vanish in future
+		   versions!
+
+		Arguments:
+		    path (str): path in storage of the file to check
+		    sd (bool): True if to check against SD storage, False otherwise
+
+		Returns:
+		    (bool) True if the file may be modified, False otherwise
+		"""
+		return not (self.is_current_file(path, sd) and (self.is_printing() or self.is_paused()))
+
+	def is_current_file(self, path, sd):
+		"""
+		Returns whether the provided ``path`` (on the printer's SD if ``sd`` is True) is the currently selected
+		file for printing.
+
+		:since: 1.3.2
+
+		.. warning::
+
+		   This was introduced in 1.3.2 to work around an issue when updating a file that is already selected.
+		   I'm not 100% sure at this point if this is the best approach to solve this issue, so if you decide
+		   to depend on this particular method in this interface, be advised that it might vanish in future
+		   versions!
+
+		Arguments:
+		    path (str): path in storage of the file to check
+		    sd (bool): True if to check against SD storage, False otherwise
+
+		Returns:
+		    (bool) True if the file is currently selected, False otherwise
+		"""
+		current_job = self.get_current_job()
+		if current_job is not None and "file" in current_job:
+			current_job_file = current_job["file"]
+			if "path" in current_job_file and "origin" in current_job_file:
+				current_file_path = current_job_file["path"]
+				current_file_origin = current_job_file["origin"]
+
+				return path == current_file_path and sd == (current_file_origin == FileDestinations.SDCARD)
+
+		return False
+
 	def select_file(self, path, sd, printAfterSelect=False, pos=None):
 		"""
 		Selects the specified ``path`` for printing, specifying if the file is to be found on the ``sd`` or not.
 		Optionally can also directly start the print after selecting the file.
 
 		Arguments:
-		    path (str): The path to select for printing. Either an absolute path (local file) or a
-		        filename (SD card).
-		    sd (boolean): Indicates whether the file is on the SD card or not.
+		    path (str): The path to select for printing. Either an absolute path or relative path to a  local file in
+		        the uploads folder or a filename on the printer's SD card.
+		    sd (boolean): Indicates whether the file is on the printer's SD card or not.
 		    printAfterSelect (boolean): Indicates whether a print should be started
 		        after the file is selected.
+
+		Raises:
+		    InvalidFileType: if the file is not a machinecode file and hence cannot be printed
+		    InvalidFileLocation: if an absolute path was provided and not contained within local storage or
+		        doesn't exist
 		"""
 		raise NotImplementedError()
 
@@ -303,7 +367,7 @@ class PrinterInterface(object):
 		  * CLOSED
 		  * ERROR
 		  * CLOSED_WITH_ERROR
-		  * TRANFERING_FILE
+		  * TRANSFERING_FILE
 		  * OFFLINE
 		  * UNKNOWN
 		  * NONE
@@ -527,3 +591,9 @@ class PrinterCallback(object):
 class UnknownScript(Exception):
 	def __init__(self, name, *args, **kwargs):
 		self.name = name
+
+class InvalidFileLocation(Exception):
+	pass
+
+class InvalidFileType(Exception):
+	pass

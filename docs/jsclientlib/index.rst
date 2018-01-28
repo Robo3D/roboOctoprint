@@ -14,7 +14,7 @@ If you are using it from a web page hosted on OctoPrint as a Jinja2 template, yo
 methods to embed it instead of manually entering the URL, in order to have OctoPrint take care of setting the
 correct URL prefix:
 
-.. code-block:: html
+.. code-block:: html+jinja
 
    <!--
      full client library or all individual files, depending
@@ -35,13 +35,48 @@ correct URL prefix:
 Regardless of which way you use to include the library, you'll also need to make sure you included JQuery and lodash,
 because the library depends on those to be available (as ``$`` and ``_``). You can embed those like this:
 
-.. code-block:: html
+.. code-block:: html+jinja
 
    <script src="{{ url_for("static", filename="js/lib/jquery/jquery.min.js") }}"></script>
    <script src="{{ url_for("static", filename="js/lib/lodash.min.js") }}"></script>
 
 Note that all components depend on the ``base`` component to be present, so if you are only including a select
 number of components, make sure to at the very least include that one to be able to utilize the client.
+
+When you import the client library as described above, a global variable ``OctoPrint`` will become available, which is
+a prepared instance of the ``OctoPrintClient`` class the library assembles from registered components. You can directly
+used that singular ``OctoPrint`` instance if you only need to talk to one OctoPrint server:
+
+.. code-block:: javascript
+
+   OctoPrint.options.baseurl = "http://example.com/octoprint/"
+   OctoPrint.options.apikey = "apikey";
+
+   OctoPrint.files.list()
+       .done(function(response) {
+           // do something with the response
+       });
+
+If you want to access multiple servers, you should however instead instantiate your own clients. You can provide the
+connection options (``baseurl`` and ``apikey``) directly in the constructor or set them later:
+
+.. code-block:: javascript
+
+   var client1 = new OctoPrintClient({baseurl: "http://example.com/octoprint1/", apikey: "apikey1"});
+
+   var client2 = new OctoPrintClient();
+   client2.options.baseurl = "http://example.com/octoprint2/";
+   client2.options.apikey = "apikey2";
+
+   client1.files.list()
+       .done(function(response) {
+           // do something with the response for server 1
+       });
+
+   client2.files.list()
+       .done(function(response) {
+           // do something with the response for server 2
+       });
 
 .. seealso::
 

@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import collections
 import logging
 import sarge
+import threading
 
 from flask import request, make_response, jsonify, url_for
 from flask.ext.babel import gettext
@@ -16,6 +17,7 @@ from octoprint.settings import settings as s
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access, get_remote_address
+from octoprint.logging import prefix_multilines
 
 
 @api.route("/system", methods=["POST"])
@@ -72,30 +74,61 @@ def executeSystemCommand(source, command):
 	if not "command" in command_spec:
 		return make_response("Command {}:{} does not define a command to execute, can't proceed".format(source, command), 500)
 
-	async = command_spec["async"] if "async" in command_spec else False
-	ignore = command_spec["ignore"] if "ignore" in command_spec else False
-	logger.info("Performing command for {}:{}: {}".format(source, command, command_spec["command"]))
+	do_async = command_spec.get("async", False)
+	do_ignore = command_spec.get("ignore", False)
+	debug = command_spec.get("debug", False)
+
+	if logger.isEnabledFor(logging.DEBUG) or debug:
+		logger.info("Performing command for {}:{}: {}".format(source, command, command_spec["command"]))
+	else:
+		logger.info("Performing command for {}:{}".format(source, command))
+
 	try:
-		# we run this with shell=True since we have to trust whatever
-		# our admin configured as command and since we want to allow
-		# shell-alike handling here...
-		p = sarge.run(command_spec["command"],
-		              stdout=sarge.Capture(),
-		              stderr=sarge.Capture(),
-		              shell=True,
-		              async=async)
-		if not async:
-			if not ignore and p.returncode != 0:
+		if "before" in command_spec and callable(command_spec["before"]):
+			command_spec["before"]()
+	except Exception as e:
+		if not do_ignore:
+			error = "Command \"before\" for {}:{} failed: {}".format(source, command, str(e))
+			logger.warn(error)
+			return make_response(error, 500)
+
+	try:
+		def execute():
+			# we run this with shell=True since we have to trust whatever
+			# our admin configured as command and since we want to allow
+			# shell-alike handling here...
+			p = sarge.run(command_spec["command"],
+			              stdout=sarge.Capture(),
+			              stderr=sarge.Capture(),
+			              shell=True)
+
+			if not do_ignore and p.returncode != 0:
 				returncode = p.returncode
 				stdout_text = p.stdout.text
 				stderr_text = p.stderr.text
 
-				error = "Command failed with return code {}:\nSTDOUT: {}\nSTDERR: {}".format(returncode, stdout_text, stderr_text)
-				logger.warn(error)
-				return make_response(error, 500)
+				error = "Command for {}:{} failed with return code {}:\nSTDOUT: {}\nSTDERR: {}".format(source, command,
+				                                                                                       returncode,
+				                                                                                       stdout_text,
+				                                                                                       stderr_text)
+				logger.warn(prefix_multilines(error, prefix="! "))
+				if not do_async:
+					raise CommandFailed(error)
+
+		if do_async:
+			thread = threading.Thread(target=execute)
+			thread.daemon = True
+			thread.start()
+
+		else:
+			try:
+				execute()
+			except CommandFailed as exc:
+				return make_response(exc.error, 500)
+
 	except Exception as e:
-		if not ignore:
-			error = "Command failed: {}".format(str(e))
+		if not do_ignore:
+			error = "Command for {}:{} failed: {}".format(source, command, str(e))
 			logger.warn(error)
 			return make_response(error, 500)
 
@@ -126,26 +159,38 @@ def _get_command_spec(source, action):
 
 
 def _get_core_command_specs():
+	def enable_safe_mode():
+		s().set(["server", "startOnceInSafeMode"], True)
+		s().save()
+
 	commands = collections.OrderedDict(
 		shutdown=dict(
 			command=s().get(["server", "commands", "systemShutdownCommand"]),
 			name=gettext("Shutdown system"),
-			confirm=gettext("You are about to shutdown the system.")),
+			confirm=gettext("<strong>You are about to shutdown the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")),
 		reboot=dict(
 			command=s().get(["server", "commands", "systemRestartCommand"]),
 			name=gettext("Reboot system"),
-			confirm=gettext("You are about to reboot the system.")),
+			confirm=gettext("<strong>You are about to reboot the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")),
 		restart=dict(
 			command=s().get(["server", "commands", "serverRestartCommand"]),
 			name=gettext("Restart OctoPrint"),
-			confirm=gettext("You are about to restart the OctoPrint server."))
+			confirm=gettext("<strong>You are about to restart the OctoPrint server.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")),
+		restart_safe=dict(
+			command=s().get(["server", "commands", "serverRestartCommand"]),
+			name=gettext("Restart OctoPrint in safe mode"),
+			confirm=gettext("<strong>You are about to restart the OctoPrint server in safe mode.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage)."),
+			before=enable_safe_mode)
 	)
 
 	available_commands = collections.OrderedDict()
 	for action, spec in commands.items():
 		if not spec["command"]:
 			continue
-		spec.update(dict(action=action, source="core", async=True, ignore=True))
+		spec.update(dict(action=action,
+		                 source="core",
+		                 async=True,
+		                 debug=True))
 		available_commands[action] = spec
 	return available_commands
 
@@ -183,3 +228,7 @@ def _get_custom_command_spec(action):
 
 	return available_actions[action]
 
+
+class CommandFailed(Exception):
+	def __init__(self, error):
+		self.error = error
