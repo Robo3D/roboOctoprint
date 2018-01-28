@@ -1,4 +1,5 @@
-#  OctoPrint
+#  OctoPrint 1.3.6 for Robo Printers 
+## In Development!  Not compatible with RoboOS 2.0 and below.
 
 [![GitHub version](https://badge.fury.io/gh/foosel%2FOctoPrint.svg)](https://badge.fury.io/gh/foosel%2FOctoPrint)
 
