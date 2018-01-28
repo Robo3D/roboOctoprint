@@ -1,4 +1,4 @@
-#  OctoPrint
+#  OctoPrint for Robo Printers
 
 OctoPrint provides a snappy web interface for controlling a 3D printer (RepRap, Ultimaker, ...). It is Free Software
 and released under the [GNU Affero General Public License V3](http://www.gnu.org/licenses/agpl.html).
@@ -49,12 +49,12 @@ and runtime environment are the following (as *regular
 user*, please keep your hands *off* of the `sudo` command here!) - this assumes
 you already have Python 2.7, pip and virtualenv set up on your system:
 
-1. Checkout OctoPrint: `git clone https://github.com/foosel/OctoPrint.git`
-2. Change into the OctoPrint folder: `cd OctoPrint`
-3. Create a user-owned virtual environment therein: `virtualenv venv`
-4. Install OctoPrint *into that virtual environment*: `./venv/bin/python setup.py install`
+1. Checkout OctoPrint: `git clone https://github.com/Robo3D/roboOctoprint.git`
+2. Change into the OctoPrint folder: `cd roboOctoprint`
+3. (only if build image from scratch) Create a user-owned virtual environment therein: `virtualenv oprint`
+4. Install OctoPrint *into that virtual environment*: `/home/pi/oprint/bin/python setup.py install`
 
-You may then start the OctoPrint server via `/path/to/OctoPrint/venv/bin/octoprint`, see [Usage](#usage)
+You may then start the OctoPrint server via `/home/pi/oprint/bin/octoprint`, see [Usage](#usage)
 for details.
 
 After installation, please make sure you follow the first-run wizard and set up
