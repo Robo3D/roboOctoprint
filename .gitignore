@@ -5,6 +5,8 @@ src/octoprint/templates/_data/THIRDPARTYLICENSES.md
 
 devtools
 
+.ftpconfig
+
 *.tar.bz2
 *.tar.gz
 *.7z
@@ -37,3 +39,5 @@ venv33
 venv34
 venv35
 venv36
+
+*.ftpconfig

@@ -44,10 +44,10 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 	# SettingsPlugin
 
 	def get_settings_defaults(self):
-		return dict(channels=dict(_important=dict(name="Important OctoPrint Announcements",
+		return dict(channels=dict(_important=dict(name="Important Robo Announcements",
 		                                          priority=1,
 		                                          type="rss",
-		                                          url="http://octoprint.org/feeds/important.xml"),
+		                                          url="https://s3.amazonaws.com/roboupdate/feeds/update.xml"),
 		                          _news=dict(name="OctoPrint News",
 		                                     priority=2,
 		                                     type="rss",
