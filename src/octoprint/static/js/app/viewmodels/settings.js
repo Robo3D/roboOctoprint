@@ -454,10 +454,12 @@ $(function() {
                 .always(function() {
                     self.testOnlineConnectivityConfigBusy(false);
                 });
+
+        };
+
         self.onSettingsShown = function() {
             self.requestData();
             self.getSshStatus();
-
         };
 
         self.onSettingsHidden = function() {
@@ -1021,4 +1023,5 @@ $(function() {
         dependencies: ["loginStateViewModel", "usersViewModel", "printerProfilesViewModel", "aboutViewModel"],
         elements: ["#settings_dialog", "#navbar_settings"]
     });
+
 });

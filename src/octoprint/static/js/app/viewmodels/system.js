@@ -146,17 +146,9 @@ $(function() {
         };
     }
 
-<<<<<<< HEAD
     OCTOPRINT_VIEWMODELS.push({
         construct: SystemViewModel,
         dependencies: ["loginStateViewModel"]
     });
-=======
-    // view model class, parameters for constructor, container to bind to
-    ADDITIONAL_VIEWMODELS.push([
-        SystemViewModel,
-        ["loginStateViewModel", "usersViewModel"],
-        []
-    ]);
->>>>>>> master
+
 });
