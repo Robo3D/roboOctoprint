@@ -3,30 +3,15 @@ $(function() {
         var self = this;
 
         self.loginStateViewModel = parameters[0];
-        self.wizardViewModel = parameters[1];
 
         self.username = ko.observable(undefined);
         self.password = ko.observable(undefined);
         self.confirmedPassword = ko.observable(undefined);
 
+        self.setup = ko.observable(false);
         self.decision = ko.observable();
 
         self.required = false;
-
-        self.acRadio = ko.observable('enabled');
-        self.acRadio.subscribe(function (newValue) {
-          var msg;
-          if (newValue == 'enabled') {
-            msg = 'enable Access Control';
-          }
-          else {
-            msg = 'disable Access Control';
-            self.username(undefined);
-            self.password(undefined);
-            self.confirmedPassword(undefined);
-          }
-          $('#acMsg').text(msg);
-        });
 
         self.passwordMismatch = ko.pureComputed(function() {
             return self.password() != self.confirmedPassword();
@@ -53,26 +38,26 @@ $(function() {
                 "pass1": self.password(),
                 "pass2": self.confirmedPassword()
             };
-
-            self._sendData(data, function () {
-                // Currently, login function occurs after .finishWizard gets called. this causes a 401 error that halts the execution of .finishWizard.done(). Rerun .finishWizard and .done as callback function after login completes.
-                self.wizardViewModel.wizards = ["corewizard"];
-                self.wizardViewModel.finishWizard()
-                    .done(function () {
-                        self.wizardViewModel.closeDialog();
-                        self.wizardViewModel.reloadOverlay.show();
-                    });
-            });
+            self._sendData(data);
         };
 
         self.disableAccessControl = function() {
-          var data = { "ac": false };
-          self._sendData(data);
+            var message = gettext("If you disable Access Control <strong>and</strong> your OctoPrint installation is accessible from the internet, your printer <strong>will be accessible by everyone - that also includes the bad guys!</strong>");
+            showConfirmationDialog({
+                message: message,
+                onproceed: function (e) {
+                    var data = {
+                        "ac": false
+                    };
+                    self._sendData(data);
+                }
+            });
         };
 
         self._sendData = function(data, callback) {
             OctoPrint.postJson("plugin/corewizard/acl", data)
                 .done(function() {
+                    self.setup(true);
                     self.decision(data.ac);
                     if (data.ac) {
                         // we now log the user in
@@ -89,33 +74,16 @@ $(function() {
         };
 
         self.onBeforeWizardTabChange = function(next, current) {
+            if (!self.required) return true;
 
-            if (!current || !_.startsWith(current, "wizard_plugin_corewizard_acl_") || self.acRadio() != 'enabled' ) {
+            if (!current || !_.startsWith(current, "wizard_plugin_corewizard_acl_") || self.setup()) {
                 return true;
             }
-
-            if (self.acRadio()=='enabled' && !self.validData()) {
-              var results = [
-                { name: "Invalid username", isValid: self.validUsername() },
-                { name: "Invalid password", isValid: self.validPassword() },
-                { name: "Passwords do not match", isValid: !self.passwordMismatch() }
-              ];
-              var msg = 'Please look over the username and password form.</br>';
-              for (var i = 0; i < results.length; i++) {
-                var addition = results[i].name + "</br>";
-                if ( !results[i].isValid ) msg += addition;
-              }
-
-              showMessageDialog({
-                  title: gettext("Enter valid username and password"),
-                  message: gettext(msg),
-                  close: "Ok"
-              });
-              return false;
-            }
-            else {
-              return true;
-            }
+            showMessageDialog({
+                title: gettext("Please set up Access Control"),
+                message: gettext("You haven't yet set up access control. You need to either setup a username and password and click \"Keep Access Control Enabled\" or click \"Disable Access Control\" before continuing")
+            });
+            return false;
         };
 
         self.onWizardDetails = function(response) {
@@ -126,59 +94,9 @@ $(function() {
             if (!self.required) return;
 
             if (!self.decision()) {
-                if ( self.acRadio() == 'enabled' ) {
-                  self.keepAccessControl();
-                }
-                else {
-                  self.disableAccessControl();
-                }
                 return "reload";
             }
         };
-    }
-
-    function CoreWizardSSHViewModel(parameters){
-      var self = this;
-
-      self.settingsViewModel = parameters[0];
-
-      self.sshRadio = ko.observable('disabled');
-      self.sshRadio.subscribe(function (newValue) {
-        var msg;
-        if (newValue == 'enabled'){
-          msg = 'enable SSH';
-        }
-        else{
-          msg = 'disable SSH';
-        }
-        $('#sshMsg').text(msg);
-      });
-
-      self.enableSSH = function () {
-        if (self.sshRadio == 'enabled') {
-          var data = { "ssh": true };
-          self._sendData(data);
-        }
-      };
-
-      self._sendData = function (data) {
-        OctoPrint.postJson("plugin/corewizard/ssh", data)
-          .done(function () {
-          });
-      };
-
-      self.onWizardFinish = function () {
-        var data = {ssh: null};
-        if (self.sshRadio() == 'enabled') {
-          data.ssh = true;
-        }
-        else {
-          data.ssh = false;
-        }
-        self._sendData(data);
-        return "reload";
-      };
-
     }
 
     function CoreWizardWebcamViewModel(parameters) {
@@ -405,7 +323,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: CoreWizardAclViewModel,
-        dependencies: ["loginStateViewModel", "wizardViewModel"],
+        dependencies: ["loginStateViewModel"],
         elements: ["#wizard_plugin_corewizard_acl"]
     }, {
         construct: CoreWizardWebcamViewModel,
@@ -415,10 +333,6 @@ $(function() {
         construct: CoreWizardServerCommandsViewModel,
         dependencies: ["settingsViewModel"],
         elements: ["#wizard_plugin_corewizard_servercommands"]
-    },{
-        construct: CoreWizardSSHViewModel,
-        dependencies: ["settingsViewModel"],
-        elements: ["wizard_plugin_corewizard_ssh"]
     }, {
         construct: CoreWizardOnlineCheckViewModel,
         dependencies: ["settingsViewModel"],
@@ -432,5 +346,4 @@ $(function() {
         dependencies: ["printerProfilesViewModel"],
         elements: ["#wizard_plugin_corewizard_printerprofile"]
     });
-
 });
