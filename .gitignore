@@ -41,3 +41,4 @@ venv35
 venv36
 
 *.ftpconfig
+sftp-config.json
