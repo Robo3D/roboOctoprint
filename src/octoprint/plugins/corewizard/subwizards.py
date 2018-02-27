@@ -181,14 +181,14 @@ class SSHSubwizard(object):
 		action = []
 
 		if "ssh" in data and data["ssh"] in valid_boolean_trues:
-			enable = 'sudo systemctl enable ssh'
-			start = 'sudo systemctl start ssh'
+			enable = "sudo systemctl enable ssh"
+			start = "sudo systemctl start ssh"
 			action.append(enable)
 			action.append(start)
 
 		elif "ssh" in data and data["ssh"] in valid_boolean_falses:
-			disable = 'sudo systemctl disable ssh'
-			stop = 'sudo systemctl stop ssh'
+			disable = "sudo systemctl disable ssh"
+			stop = "sudo systemctl stop ssh"
 			action.append(disable)
 			action.append(stop)
 		else:
@@ -197,10 +197,7 @@ class SSHSubwizard(object):
 		if len(action) != 0:
 			for act in action:
 				self._logger.info("Executing command: {}".format(act))
-				temp_p = subprocess.Popen(act,
-							stdout=subprocess.PIPE,
-							shell=True
-						 )
+				temp_p = subprocess.Popen(act, stdout=subprocess.PIPE, shell=True)
 				output, error = temp_p.communicate()
 				p_status = temp_p.wait()
 

@@ -121,7 +121,7 @@ $(function() {
         }
 
         self.disableSSH = function(){
-            var data = {"ssh": true};
+            var data = {"ssh": false};
             self._sendData(data);
 
         }
