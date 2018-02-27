@@ -136,7 +136,7 @@ class PluginBlacklistSubwizard(object):
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
 class PrinterProfileSubwizard(object):
 	def _is_printerprofile_wizard_firstrunonly(self):
-		return True
+		return False
 
 	def _is_printerprofile_wizard_required(self):
 		return self._printer_profile_manager.is_default_unmodified() and self._printer_profile_manager.profile_count == 1
