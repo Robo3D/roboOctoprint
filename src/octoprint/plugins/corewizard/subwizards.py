@@ -147,8 +147,91 @@ class PrinterProfileSubwizard(object):
 	def _get_printerprofile_wizard_name(self):
 		return gettext("Default Printer Profile")
 
+class SSHSubwizard(object):
+	def _is_ssh_wizard_firstrunonly(self):
+		return True
+
+	def _is_ssh_wizard_required(self):
+		return True
+
+	def _get_ssh_wizard_details(self):
+		return dict(required=self._is_ssh_wizard_required())
+
+	def _get_ssh_wizard_name(self):
+		return gettext("SSH Control")
+
+	def _get_ssh_additional_wizard_template_data(self):
+		return dict(mandatory=self._is_acl_wizard_required())
+
+	@octoprint.plugin.BlueprintPlugin.route("/ssh", methods=["POST"])
+	def get_ssh_control(self):
+		import subprocess
+		from flask import request, abort
+		from octoprint.server.api import NO_CONTENT
+		valid_boolean_trues = [True, "true", "yes", "y", "1"]
+		valid_boolean_falses = [False, "false", "no", "n", "0"]
+
+		if not self._settings.global_get(["server", "firstRun"]):
+			abort(404)
+
+		data = request.values
+		if hasattr(request, "json") and request.json:
+			data = request.json
+
+		action = []
+
+		if "ssh" in data and data["ssh"] in valid_boolean_trues:
+			enable = 'sudo systemctl enable ssh'
+			start = 'sudo systemctl start ssh'
+			action.append(enable)
+			action.append(start)
+
+		elif "ssh" in data and data["ssh"] in valid_boolean_falses:
+			disable = 'sudo systemctl disable ssh'
+			stop = 'sudo systemctl stop ssh'
+			action.append(disable)
+			action.append(stop)
+		else:
+			self._logger.info("Supplied action could not be taken")
+
+		if len(action) != 0:
+			for act in action:
+				self._logger.info("Executing command: {}".format(act))
+				temp_p = subprocess.Popen(act,
+							stdout=subprocess.PIPE,
+							shell=True
+						 )
+				output, error = temp_p.communicate()
+				p_status = temp_p.wait()
+
+				self._logger.info(output)
+				self._logger.info(error)
+				self._logger.info(p_status)
+		else:
+			self._logger.info("No Actions could be taken")
+
+
+		return NO_CONTENT
+
+
+
+	@octoprint.plugin.BlueprintPlugin.route("/ssh/status", methods=["GET"])
+	def ssh_get_status(self):
+		import subprocess
+		try:
+			o = subprocess.check_output(['sudo','service','ssh','status'])
+			is_enabled = 'Active: active' in o
+		except subprocess.CalledProcessError as e:
+			is_enabled = False
+		finally:
+			return "enabled" if is_enabled else "disabled"
+
+
+
+
+
 
 Subwizards = type("Subwizwards",
-                  tuple(cls for clsname, cls in inspect.getmembers(sys.modules[__name__], inspect.isclass)
-                        if clsname.endswith("Subwizard")),
-                  dict())
+				  tuple(cls for clsname, cls in inspect.getmembers(sys.modules[__name__], inspect.isclass)
+						if clsname.endswith("Subwizard")),
+				  dict())

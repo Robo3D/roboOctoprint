@@ -1,0 +1,35 @@
+<h3>{{ _('SSH Control') }}</h3>
+
+{% trans %}
+<p>
+    <strong>Please read the following important information regarding SSH Control.</strong>
+</p>
+<p>
+    By default SSH is disabled. If you are unfamiliar with SSH we advise that you leave the printer in this default state to prevent remote users from controlling the printer.
+</p>
+<p>
+    When SSH is enabled, any user with the printer operating system's username and password can access this printer.
+    </br>
+    <strong>The printer's default username is 'pi' and the password is 'raspberry'.</strong>
+</p>
+<p>
+  To change your password, log in as the user and enter 'passwd'. You'll be prompted to enter the current password to authenticate, and then enter the new password. Once correctly confirmed, you'll see the message 'passwd: password updated successfully' and the new password will be applied.
+</p>
+<p>
+  <strong>NOTE:</strong> If you lose your new password, Robo will not be able to assist you with retrieving or resetting it without reflashing the operating system. In which case, all your data will be lost. There is no need to change your password if you keep SSH disabled.
+</p>
+{% endtrans %}
+
+<div class="row-fluid">
+    <a href="#" class="btn btn-danger span6" data-bind="click: function() { if(!setup()){enableSSH()}}, enable: !setup(), css: {disabled: setup()}">{{ _('Enable SSH') }}</a>
+    <a href="#" class="btn btn-primary span6" data-bind="click: function() { if(!setup()){disableSSH()}}, enable: !setup(), css: {disabled: setup()}">{{ _('Disable SSH') }}</a>
+</div>
+
+<div class="acl_decision" style="display: none" data-bind="visible: setup()">
+    <div class="text-center" style="display: none" data-bind="visible: decision()">{% trans %}
+        SSH is <strong class="text-success">enabled</strong>.
+    {% endtrans %}</div>
+    <div class="text-center" style="display: none" data-bind="visible: !decision()">{% trans %}
+        SSH is <strong class="text-danger">disabled</strong>.
+    {% endtrans %}</div>
+</div>

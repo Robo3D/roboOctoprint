@@ -99,6 +99,57 @@ $(function() {
         };
     }
 
+    function CoreWizardSSHViewModel(parameters){
+        var self = this;
+
+        //Variable for checking if we have setup or not
+        self.setup = ko.observable(false);
+        self.decision = ko.observable();
+
+        self.settingsViewModel = parameters[0];
+
+        self.enableSSH = function(){
+
+            var message = gettext("If you enable SSH <strong>anyone</strong> on your network will be able to access your printer over ssh.");
+            showConfirmationDialog({
+                message: message,
+                onproceed: function (e) {
+                    var data = {"ssh": true};
+                    self._sendData(data);
+                }
+            });
+        }
+
+        self.disableSSH = function(){
+            var data = {"ssh": true};
+            self._sendData(data);
+
+        }
+        self._sendData = function (data) {
+        OctoPrint.postJson("plugin/corewizard/ssh", data)
+          .done(function () {
+            self.setup(true)
+            self.decision(data.ssh)
+            console.log("Finished sending data!");
+          });
+        };
+
+        self.onWizardFinish = function() {
+            return 'reload';
+        };
+
+        self.onBeforeWizardTabChange = function(next, current) {
+            if (!current || !_.startsWith(current, "wizard_plugin_corewizard_ssh") || self.setup()) {
+                return true;
+            }
+            showMessageDialog({
+                title: gettext("Please choose an option for SSH"),
+                message: gettext("You haven't yet set up ssh. You need to choose to \"Enable SSH\" or \"Disable SSH\" before continuing")
+            });
+            return false;
+        };
+    }
+
     function CoreWizardWebcamViewModel(parameters) {
         var self = this;
 
@@ -326,6 +377,10 @@ $(function() {
         dependencies: ["loginStateViewModel"],
         elements: ["#wizard_plugin_corewizard_acl"]
     }, {
+        construct: CoreWizardSSHViewModel,
+        dependencies: ["settingsViewModel"],
+        elements: ["#wizard_plugin_corewizard_ssh"]
+    },{
         construct: CoreWizardWebcamViewModel,
         dependencies: ["settingsViewModel"],
         elements: ["#wizard_plugin_corewizard_webcam"]
