@@ -2,7 +2,7 @@
 # @Author: Matt Pedler & Robo3D
 # @Date:   2018-02-27 12:42:45
 # @Last Modified by:   Matt Pedler
-# @Last Modified time: 2018-02-27 16:53:15
+# @Last Modified time: 2018-02-27 17:01:54
 
 
 '''
@@ -413,14 +413,12 @@ class EEPROM_Handler(object):
     #use the var_id to find callbacks, then callback all callbacks with the value as the only argument
     def observer_caller(self, var_id, value):
         if var_id in self.registered_callbacks:
-            #import json
-            #self._logger.info(str(self.registered_callbacks))
             for callback in self.registered_callbacks[var_id]:
                 callback(value)
 
 
     ############################################################################################################################
-    #                                               PConsole Variable Observers                                                #
+    #                                               EEPROM Variable Observers                                                  #
     ############################################################################################################################
 
     @property
