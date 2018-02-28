@@ -415,3 +415,30 @@ def _delete_from_data(x, key_matcher):
 		if key_matcher(k):
 			del data[k]
 	return data
+
+# EEPROM API 
+
+# query EEPROM
+@api.route("/printer/query_eeprom", methods=["GET"])
+@restricted_access
+def _query_eeprom():
+	if not printer.is_operational():
+		return make_response("Printer is not operational", 409)
+
+	printer._eeprom_handler.query_eeprom()
+
+	return make_response("EEPROM has been queried", 200)
+
+@api.route("/printer/get_eeprom", methods=["GET"])
+@restricted_access
+def _get_eeprom():
+	if not printer.is_operational():
+		return make_response("Printer is not operational", 409)
+
+	eeprom = printer._eeprom_handler.get_eeprom_dict()
+
+	return jsonify(eeprom)
+
+
+
+

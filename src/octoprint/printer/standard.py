@@ -42,7 +42,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 		self._logger = logging.getLogger(__name__)
 
 		# EEPROM Handler
-		self._eeprom_handler = EEPROM_Handler(self._logger, commands=self.commands)
+		self._eeprom_handler = EEPROM_Handler(self._logger, printer=self)
 
 		self._analysisQueue = analysisQueue
 		self._fileManager = fileManager

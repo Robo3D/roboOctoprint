@@ -2,7 +2,7 @@
 # @Author: Matt Pedler & Robo3D
 # @Date:   2018-02-27 12:42:45
 # @Last Modified by:   Matt Pedler
-# @Last Modified time: 2018-02-27 16:06:24
+# @Last Modified time: 2018-02-27 16:53:15
 
 
 '''
@@ -41,16 +41,17 @@ class EEPROM_Handler(object):
     _max_accelerations = {}
     _advanced_variables = {}
     _linear_advanced = {}
+    _hotend_offset = {}
     cur_time = 0
 
-    def __init__(self, _logger, commands=None):
+    def __init__(self, _logger, printer=None):
         super(EEPROM_Handler, self).__init__()
         
         self._logger = _logger
         self._logger.info("EEPROM_Handler Starting up")
         self.registered_callbacks = {}
 
-        self.commands = commands
+        self.printer = printer
 
     def is_eeprom_message(self, data):
         find_data = ['M92', 'M203', 'M201', 'M204', 'M205', 'M206', 'M218', 'M301', 'M304', 'M851', 'M900']
@@ -92,20 +93,26 @@ class EEPROM_Handler(object):
 
     def query_eeprom(self):
         self.cur_time = time.time()
-        self.commands('M501')
+        if self.printer._comm is None or not self.printer._comm.isOperational() or self.printer._comm.isPrinting() or self.printer._comm.isPaused():
+            self.printer.commands('M503')
+        else:
+            self.printer.commands('M501')
 
-    #this will pause all processing until we get the EEPROM. Not recommended to use unless you need updates to the EEPROM
-    def get_eeprom(self):
-        self.eeprom_ready = False
-        self.cur_time = time.time()
-        self.commands('M501')
-
-        while (self.eeprom_ready == False):
-            pass
-
-        self.eeprom_ready = False
-
-        return
+    def get_eeprom_dict(self):
+        eeprom_dict = {
+            'M92': self.steps_per_unit, 
+            'M203': self.feed_rate, 
+            'M201': self.max_accelerations, 
+            'M204': self.accelerations, 
+            'M205': self.advanced_variables, 
+            'M206': self.home_offset, 
+            'M218': self.hotend_offset, 
+            'M301': self.PID, 
+            'M304': self.BPID, 
+            'M851': self.probe_offset, 
+            'M900': self.linear_advanced
+        }
+        return eeprom_dict
 
     def parse_M_commands(self, data, command):
         return_dict = {}
@@ -425,6 +432,16 @@ class EEPROM_Handler(object):
         self._home_offset = value
         var_id = 'M206'
         self.observer_caller(var_id, self._home_offset)
+
+    @property
+    def hotend_offset(self):
+        return self._hotend_offset
+
+    @hotend_offset.setter
+    def hotend_offset(self, value):
+        self._hotend_offset = value
+        var_id = 'M218'
+        self.observer_caller(var_id, self.hotend_offset)
         
     @property
     def probe_offset(self):
