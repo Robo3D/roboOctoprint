@@ -314,9 +314,10 @@ class MachineCom(object):
 
 	CAPABILITY_AUTOREPORT_TEMP = "AUTOREPORT_TEMP"
 
-	def __init__(self, port = None, baudrate=None, callbackObject=None, printerProfileManager=None):
+	def __init__(self, port = None, baudrate=None, callbackObject=None, printerProfileManager=None, eeprom_handler=None):
 		self._logger = logging.getLogger(__name__)
 		self._serialLogger = logging.getLogger("SERIAL")
+		self._eeprom_handler = eeprom_handler
 
 		if port == None:
 			port = settings().get(["serial", "port"])
@@ -1371,6 +1372,10 @@ class MachineCom(object):
 
 					self._processTemperatures(line)
 					self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed)
+
+				#EEPROM Processing
+				elif self._eeprom_handler.is_eeprom_message(line):
+					self._eeprom_handler.on_EEPROM_Message(line)
 
 				elif supportRepetierTargetTemp and ('TargetExtr' in line or 'TargetBed' in line):
 					matchExtr = regex_repetierTempExtr.match(line)

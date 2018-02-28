@@ -27,6 +27,7 @@ from octoprint.settings import settings
 from octoprint.util import comm as comm
 from octoprint.util import InvariantContainer
 from octoprint.util import to_unicode
+from octoprint.util.EEPROM_Handler import EEPROM_Handler
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
@@ -39,6 +40,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 		from collections import deque
 
 		self._logger = logging.getLogger(__name__)
+
+		# EEPROM Handler
+		self._eeprom_handler = EEPROM_Handler(self._logger, commands=self.commands)
 
 		self._analysisQueue = analysisQueue
 		self._fileManager = fileManager
@@ -218,7 +222,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 			# if serial.log is not enabled, log a line to explain that to reduce "serial.log is empty" in tickets...
 			logging.getLogger("SERIAL").info("serial.log is currently not enabled, you can enable it via Settings > Serial Connection > Log communication to serial.log")
 
-		self._comm = comm.MachineCom(port, baudrate, callbackObject=self, printerProfileManager=self._printerProfileManager)
+		self._comm = comm.MachineCom(port, baudrate, callbackObject=self, printerProfileManager=self._printerProfileManager, eeprom_handler=self._eeprom_handler)
+		
+		#get eeprom on restart
+		self._eeprom_handler.query_eeprom()
 
 	def disconnect(self):
 		"""
