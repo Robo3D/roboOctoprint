@@ -2,7 +2,7 @@
 # @Author: Matt Pedler
 # @Date:   2018-02-28 11:06:59
 # @Last Modified by:   Matt Pedler
-# @Last Modified time: 2018-02-28 17:23:09
+# @Last Modified time: 2018-02-28 18:12:30
 '''
 This is an XMLRPC server for the sole purpose of relaying all messages in comm to 
 any local program that is subscribed to it. This allows other programs on the host
@@ -50,7 +50,8 @@ class Saiga_Dispatcher(SimpleXMLRPCServer, object):
     def __init__(self):
         self._logger = logging.getLogger(__name__)
         self.topic_subscribers = dict()
-        super(Saiga_Dispatcher, self).__init__(("0.0.0.0", rpc_server_port), logRequests=False)
+        self.server_alive = True
+        super(Saiga_Dispatcher, self).__init__(("127.0.0.1", rpc_server_port), logRequests=False)
         self._logger.info("**********************************************************")
         self._logger.info("XMLRPC Listening on port {}...".format(rpc_server_port))
         self._logger.info("**********************************************************")
@@ -59,13 +60,11 @@ class Saiga_Dispatcher(SimpleXMLRPCServer, object):
         self.register_function(self.unsubscribe_all, "unsubscribe_all")
         self.register_function(self.send, "send")
         self.register_function(self.kill, "kill")
-
-        self.parent_PID = parent_PID
+        
         self.serve_forever()
 
     def serve_forever(self):
         #serve xmlrpc forever until dead
-        self.server_alive = True
         while self.server_alive:
             self.handle_request()
 
@@ -94,7 +93,7 @@ class Saiga_Dispatcher(SimpleXMLRPCServer, object):
         #self._logger.info("\n\nSending Message:\nTopic: {}\nPayload: {}\n\n".format(message["topic"], message["payload"]))
         try:
             for subscriber in self.topic_subscribers[message.get("topic", "all")]:
-                srv_proxy = ServerProxy("http://0.0.0.0:{}".format(subscriber))
+                srv_proxy = ServerProxy("http://127.0.0.1:{}".format(subscriber))
                 srv_proxy.process(message)
         except KeyError as e:
             #self._logger.info(message.get("topic", "No Topic") + " has no subscribers yet. Discarding message")
@@ -112,7 +111,7 @@ class Saiga_Node(object):
         self._logger = logging.getLogger(__name__)
 
     def subscribe(self, topic, callback):
-        subscriber_server = Subscriber("http://0.0.0.0:{}".format(rpc_server_port), topic, callback)
+        subscriber_server = Subscriber("http://127.0.0.1:{}".format(rpc_server_port), topic, callback)
         return subscriber_server
 
     def publish_to(self, topic, payload = "Default Message, Please Change. It's you not me"):
@@ -124,7 +123,7 @@ class Saiga_Node(object):
             'payload': payload,
         }
         try:
-            publisher = ServerProxy("http://0.0.0.0:{}".format(rpc_server_port))
+            publisher = ServerProxy("http://127.0.0.1:{}".format(rpc_server_port))
             publisher.send(message)
         except Exception as e:
             self._logger.info(str(e))
@@ -137,7 +136,7 @@ class Subscriber(SimpleXMLRPCServer, object):
         self._logger = logging.getLogger(__name__)
         self.port = self.get_open_port()
         self._logger.info("Listening on port " + str(self.port) + "...")
-        super(Subscriber, self).__init__(("0.0.0.0", self.port),
+        super(Subscriber, self).__init__(("127.0.0.1", self.port),
                                          allow_none=True,
                                          logRequests=False)
         #handle the callback
