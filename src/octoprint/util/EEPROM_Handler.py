@@ -2,7 +2,7 @@
 # @Author: Matt Pedler & Robo3D
 # @Date:   2018-02-27 12:42:45
 # @Last Modified by:   Matt Pedler
-# @Last Modified time: 2018-02-27 17:01:54
+# @Last Modified time: 2018-02-28 10:55:15
 
 
 '''
@@ -91,6 +91,10 @@ class EEPROM_Handler(object):
                 acceptable_finds[query](data)
                 break   
 
+    '''
+    Query EEPROM will ask if the printer is printing or not and either perform an M503 or an M501
+    This will trigger an automatic collection of the EEPROM.
+    '''
     def query_eeprom(self):
         self.cur_time = time.time()
         if self.printer._comm is None or not self.printer._comm.isOperational() or self.printer._comm.isPrinting() or self.printer._comm.isPaused():
@@ -98,6 +102,11 @@ class EEPROM_Handler(object):
         else:
             self.printer.commands('M501')
 
+    '''
+    Get EEPROM Dict will return a dictionary of the current captured EEPROM. This will not return
+    THE current EEPROM, Just the most recently captured one. During printing this function may not have the 
+    most up to date information.
+    '''
     def get_eeprom_dict(self):
         eeprom_dict = {
             'M92': self.steps_per_unit, 
@@ -260,6 +269,7 @@ class EEPROM_Handler(object):
             result.update(dictionary)
         return result
 
+    #This is for debugging. 
     def dict_logger(self, dictionary, indent = 0):
         indent_string = ""
         for x in range(indent):
@@ -361,65 +371,11 @@ class EEPROM_Handler(object):
         finished_time = (time.time() - self.cur_time) * 1000
         self._logger.info("M900 getting it in " + str(finished_time) + " ms")    
 
-    #let classes set up ovservers for any variable
-    def register_observer(self, command, callback):
+    
 
-        #This is a list for recognizing valid callbacks
-        pconsole_values = [ 'M206', 
-                            'M851',
-                            'M203',
-                            'M301',
-                            'M304',
-                            'M92',
-                            'M204',
-                            'M201',
-                            'M205',
-                            'M900',
-                            ]
-
-        if command in pconsole_values:
-            if command in self.registered_callbacks and type(self.registered_callbacks[command]) == list:
-                self.registered_callbacks[command].append(callback)
-                self._logger.info("Added a callback for command: " + str(command) + " ID: " + str(id(callback)))
-            else:
-                self.registered_callbacks[command] = [callback]
-                self._logger.info("Added first callback for command: " + str(command) + " ID: " + str(id(callback)))
-            return True
-        self._logger.info("Failed to add callback for command: " + str(command) + " ID: " + str(id(callback)))
-        return False
-
-    def unregister_observer(self, command, callback):
-        #This is a list for recognizing valid callbacks
-        pconsole_values = [ 'M206', 
-                            'M851',
-                            'M203',
-                            'M301',
-                            'M304',
-                            'M92',
-                            'M204',
-                            'M201',
-                            'M205',
-                            'M900',
-                            ]
-        if command in pconsole_values:
-            #for every callback in the command 
-            if callback in self.registered_callbacks[command]:
-                self.registered_callbacks[command].remove(callback)
-                self._logger.info("Deleted Callback for command: " + str(command) + " ID: " + str(id(callback)))
-                return True
-        self._logger.info("Failed to remove callback for command: " + str(command) + " ID: " + str(id(callback)))
-        return False
-
-    #use the var_id to find callbacks, then callback all callbacks with the value as the only argument
-    def observer_caller(self, var_id, value):
-        if var_id in self.registered_callbacks:
-            for callback in self.registered_callbacks[var_id]:
-                callback(value)
-
-
-    ############################################################################################################################
-    #                                               EEPROM Variable Observers                                                  #
-    ############################################################################################################################
+    ####################
+    # EEPROM Variables #
+    ####################
 
     @property
     def home_offset(self):
@@ -429,7 +385,7 @@ class EEPROM_Handler(object):
     def home_offset(self, value):
         self._home_offset = value
         var_id = 'M206'
-        self.observer_caller(var_id, self._home_offset)
+
 
     @property
     def hotend_offset(self):
@@ -439,7 +395,7 @@ class EEPROM_Handler(object):
     def hotend_offset(self, value):
         self._hotend_offset = value
         var_id = 'M218'
-        self.observer_caller(var_id, self.hotend_offset)
+
         
     @property
     def probe_offset(self):
@@ -449,7 +405,7 @@ class EEPROM_Handler(object):
     def probe_offset(self, value):
         self._probe_offset = value
         var_id = 'M851'
-        self.observer_caller(var_id, self._probe_offset)
+
 
     @property
     def feed_rate(self):
@@ -459,7 +415,7 @@ class EEPROM_Handler(object):
     def feed_rate(self, value):
         self._feed_rate = value
         var_id = 'M203'
-        self.observer_caller(var_id, self._feed_rate)
+
 
     @property
     def PID(self):
@@ -469,7 +425,7 @@ class EEPROM_Handler(object):
     def PID(self, value):
         self._PID = value
         var_id = 'M301'
-        self.observer_caller(var_id, self._PID)
+
 
     @property
     def BPID(self):
@@ -479,7 +435,7 @@ class EEPROM_Handler(object):
     def BPID(self, value):
         self._BPID = value
         var_id = 'M304'
-        self.observer_caller(var_id, self._BPID)
+
 
     @property
     def steps_per_unit(self):
@@ -489,7 +445,7 @@ class EEPROM_Handler(object):
     def steps_per_unit(self, value):
         self._steps_per_unit = value
         var_id = 'M92'
-        self.observer_caller(var_id, self._steps_per_unit)
+
 
     @property
     def accelerations(self):
@@ -499,7 +455,7 @@ class EEPROM_Handler(object):
     def accelerations(self, value):
         self._accelerations = value
         var_id = 'M204'
-        self.observer_caller(var_id, self._accelerations)
+
 
     @property
     def max_accelerations(self):
@@ -509,7 +465,7 @@ class EEPROM_Handler(object):
     def max_accelerations(self, value):
         self._max_accelerations = value
         var_id = 'M201'
-        self.observer_caller(var_id, self._max_accelerations)
+
 
     @property
     def advanced_variables(self):
@@ -519,7 +475,7 @@ class EEPROM_Handler(object):
     def advanced_variables(self, value):
         self._advanced_variables = value
         var_id = 'M205'
-        self.observer_caller(var_id, self._advanced_variables)
+
 
     @property
     def linear_advanced(self):
@@ -529,66 +485,5 @@ class EEPROM_Handler(object):
     def linear_advanced(self, value):
         self._linear_advanced = value
         var_id = 'M900'
-        self.observer_caller(var_id, self._linear_advanced)
-
-    #Experimental. Use at own risk
-    def join_EEPROM(self, join_list = []):
-        catcher_returns = {}
-        return_list = []
-        def catcher(command, value):
-            self._logger.info("Command: " + str(command) + " Returned: " + str(value))
-            catcher_returns[command] = value
-            
-        def monitor_returns():
-            import time
-            returns_complete = False
-            self._logger.info("Thread starting")
-            while not returns_complete:
-                if len([x for x in join_list if (x in catcher_returns)]) == len(join_list):
-                    for command in join_list:
-                        return_list.append(catcher_returns[command])
-                    returns_complete = True
-                    self._logger.info("Returns Complete")
-                    break
-                else:
-                    time.sleep(1)
-            
-            return return_list
-
-        for command in join_list:
-            EEPROM_Catcher(command, catcher, self)
-
-        pconsole.query_eeprom()
-        
-        #start thread to monitor asynchronus task
-        import threading
-        monitor = threading.Thread(target = monitor_returns)
-        monitor.start()
-        monitor.join()
-
-        return return_list
-
-        
-
-class EEPROM_Catcher(object):
-    """docstring for EEPROM_Catcher"""
-    def __init__(self, command, callback, pconsole):
-        super(EEPROM_Catcher, self).__init__()
-        self.command = command
-        self.callback = callback
-        self.pconsole = pconsole
-        self.register_catcher()
-
-    def __del__(self):
-        self.pconsole.unregister_observer(self.command, self.catcher)
-
-    def register_catcher(self):
-        self.pconsole.register_observer(self.command, self.catcher)
-
-    def catcher(self, value):
-        self.callback(self.command, value)
-        self.__del__()
-        
 
 
-        

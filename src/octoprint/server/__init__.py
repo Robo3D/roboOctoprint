@@ -602,6 +602,10 @@ class Server(object):
 		# analysis backlog
 		fileManager.process_backlog()
 
+		from octoprint.printer.saiga_xmlrpc import start_saiga_dispatch_server
+		# Start Saiga Server (XMLRPC server)
+		start_saiga_dispatch_server()
+
 		# auto connect
 		if self._settings.getBoolean(["serial", "autoconnect"]):
 			try:

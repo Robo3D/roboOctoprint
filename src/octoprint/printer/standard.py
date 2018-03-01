@@ -29,7 +29,6 @@ from octoprint.util import InvariantContainer
 from octoprint.util import to_unicode
 from octoprint.util.EEPROM_Handler import EEPROM_Handler
 
-
 class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 	"""
 	Default implementation of the :class:`PrinterInterface`. Manages the communication layer object and registers
@@ -178,8 +177,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 		with self._selectedFileMutex:
 			if self._selectedFile:
 				self._setJobData(self._selectedFile["filename"],
-				                 self._selectedFile["filesize"],
-				                 self._selectedFile["sd"])
+								 self._selectedFile["filesize"],
+								 self._selectedFile["sd"])
 
 
 	#~~ progress plugin reporting
@@ -610,9 +609,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 
 		if valid_file_type(filename, "gcode"):
 			remoteName = util.get_dos_filename(filename,
-			                                   existing_filenames=existingSdFiles,
-			                                   extension="gco",
-			                                   whitelisted_extensions=["gco", "g"])
+											   existing_filenames=existingSdFiles,
+											   extension="gco",
+											   whitelisted_extensions=["gco", "g"])
 		else:
 			# probably something else added through a plugin, use it's basename as-is
 			remoteName = os.path.basename(filename)
@@ -1036,11 +1035,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 					if state == comm.MachineCom.STATE_CLOSED or state == comm.MachineCom.STATE_ERROR or state == comm.MachineCom.STATE_CLOSED_WITH_ERROR:
 						def log_print():
 							self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL,
-							                            self._selectedFile["filename"],
-							                            time.time(),
-							                            self._comm.getPrintTime(),
-							                            False,
-							                            self._printerProfileManager.get_current_or_default()["id"])
+														self._selectedFile["filename"],
+														time.time(),
+														self._comm.getPrintTime(),
+														False,
+														self._printerProfileManager.get_current_or_default()["id"])
 
 						thread = threading.Thread(target=log_print)
 						thread.daemon = True
@@ -1128,9 +1127,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 		if payload:
 			payload["time"] = self._comm.getPrintTime()
 			self._updateProgressData(completion=1.0,
-			                         filepos=payload["size"],
-			                         printTime=payload["time"],
-			                         printTimeLeft=0)
+									 filepos=payload["size"],
+									 printTime=payload["time"],
+									 printTimeLeft=0)
 			self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
 
 			eventManager().fire(Events.PRINT_DONE, payload)
@@ -1140,11 +1139,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 
 			def log_print():
 				self._fileManager.log_print(payload["origin"],
-				                            payload["path"],
-				                            time.time(),
-				                            payload["time"],
-				                            True,
-				                            self._printerProfileManager.get_current_or_default()["id"])
+											payload["path"],
+											time.time(),
+											payload["time"],
+											True,
+											self._printerProfileManager.get_current_or_default()["id"])
 
 			thread = threading.Thread(target=log_print)
 			thread.daemon = True
@@ -1174,11 +1173,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 
 			def finalize():
 				self._fileManager.log_print(payload["origin"],
-				                            payload["path"],
-				                            time.time(),
-				                            payload["time"],
-				                            False,
-				                            self._printerProfileManager.get_current_or_default()["id"])
+											payload["path"],
+											time.time(),
+											payload["time"],
+											False,
+											self._printerProfileManager.get_current_or_default()["id"])
 				eventManager().fire(Events.PRINT_FAILED, payload)
 
 			thread = threading.Thread(target=finalize)
@@ -1267,9 +1266,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, object):
 			origin = FileDestinations.LOCAL
 
 		result= dict(name=name,
-		             path=path,
-		             origin=origin,
-		             size=print_job_size,
+					 path=path,
+					 origin=origin,
+					 size=print_job_size,
 
 					 # TODO deprecated, remove in 1.4.0
 					 file=full_path,

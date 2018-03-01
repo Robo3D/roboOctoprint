@@ -34,6 +34,9 @@ from octoprint.filemanager.destinations import FileDestinations
 from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer, \
 	to_unicode, bom_aware_open, TypedQueue, PrependableQueue, TypeAlreadyInQueue, chunks
 
+#xmlrpc server
+from octoprint.printer.saiga_xmlrpc import Saiga_Node
+
 try:
 	import _winreg
 except:
@@ -1193,6 +1196,8 @@ class MachineCom(object):
 
 		self._consecutive_timeouts = 0
 
+		xmlrpc_publisher = Saiga_Node()
+
 		#Open the serial port.
 		if not self._openSerial():
 			return
@@ -1533,6 +1538,9 @@ class MachineCom(object):
 
 				##~~ Message handling
 				self._callback.on_comm_message(line)
+
+				##~~ XMLRPC handling
+				xmlrpc_publisher.publish_to('octoprint.comm.received', payload=line)
 
 				##~~ Parsing for feedback commands
 				if feedback_controls and feedback_matcher and not "_all" in feedback_errors:
