@@ -2,7 +2,7 @@
 # @Author: Matt Pedler
 # @Date:   2018-02-28 11:06:59
 # @Last Modified by:   Matt Pedler
-# @Last Modified time: 2018-02-28 18:12:30
+# @Last Modified time: 2018-03-01 11:36:36
 '''
 This is an XMLRPC server for the sole purpose of relaying all messages in comm to 
 any local program that is subscribed to it. This allows other programs on the host
@@ -60,13 +60,17 @@ class Saiga_Dispatcher(SimpleXMLRPCServer, object):
         self.register_function(self.unsubscribe_all, "unsubscribe_all")
         self.register_function(self.send, "send")
         self.register_function(self.kill, "kill")
-        
+
         self.serve_forever()
 
     def serve_forever(self):
         #serve xmlrpc forever until dead
-        while self.server_alive:
-            self.handle_request()
+        try:
+            while self.server_alive:
+                self.handle_request()
+        except Exception as e:
+            self._logger.info(str(e))
+            traceback.print_exc()        
 
         self._logger.info("Exiting XMLRPC Server")
 
@@ -91,14 +95,21 @@ class Saiga_Dispatcher(SimpleXMLRPCServer, object):
 
     def send(self, message):
         #self._logger.info("\n\nSending Message:\nTopic: {}\nPayload: {}\n\n".format(message["topic"], message["payload"]))
-        try:
-            for subscriber in self.topic_subscribers[message.get("topic", "all")]:
-                srv_proxy = ServerProxy("http://127.0.0.1:{}".format(subscriber))
-                srv_proxy.process(message)
-        except KeyError as e:
-            #self._logger.info(message.get("topic", "No Topic") + " has no subscribers yet. Discarding message")
-            pass
-            #This error is most likely that there are no subscribers
+
+        #check for subscribers
+        topic = message.get("topic", "all")
+        payload = message.get('payload', "")
+        if topic in self.topic_subscribers and len(self.topic_subscribers[topic]) != 0:
+            for subscriber in self.topic_subscribers[topic]:
+                try:
+                    #self._logger.info("Attempting to send message to {}".format(subscriber))
+                    srv_proxy = ServerProxy("http://127.0.0.1:{}".format(subscriber))
+                    srv_proxy.process(payload)
+                except KeyError as e:
+                    self._logger.info(e)
+                    self._logger.info("Failed to send message to {}".format(subscriber))
+                    traceback.print_exc()
+                    
         
         return "OK"
 
