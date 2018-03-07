@@ -954,7 +954,7 @@ class Profile(object):
 			settings["raftInterfaceLineSpacing"] = self.get_microns("raft_interface_linewidth") * 2
 			settings["raftAirGapLayer0"] = self.get_microns("raft_airgap")
 			settings["raftBaseSpeed"] = self.get_int("bottom_layer_speed")
-			settings["raftFanSpeed"] = 100
+			settings["raftFanSpeed"] = 0
 			settings["raftSurfaceThickness"] = settings["raftInterfaceThickness"]
 			settings["raftSurfaceLinewidth"] = int(edge_width * 1000)
 			settings["raftSurfaceLineSpacing"] = int(edge_width * 1000 * 0.9)
