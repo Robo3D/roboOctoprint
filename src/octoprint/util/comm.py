@@ -354,6 +354,9 @@ class MachineCom(object):
 		self._dwelling_until = False
 		self._connection_closing = False
 
+		self._pause_lock = False
+		self._fire_unpause = True
+
 		#canceled print
 		self.cancel_called = False
 
@@ -1017,6 +1020,9 @@ class MachineCom(object):
 
 	def _pause_preparation_done(self):
 		self._callback.on_comm_print_job_paused()
+		self._pause_lock = False
+		if not self._fire_unpause:
+			self.setPause(self._fire_unpause)
 
 	def setPause(self, pause):
 		if self.isStreaming():
@@ -1026,7 +1032,7 @@ class MachineCom(object):
 			return
 
 		with self._jobLock:
-			if not pause and self.isPaused():
+			if not pause and self.isPaused() and not self._pause_lock:
 				if self._pauseWaitStartTime:
 					self._pauseWaitTimeLost = self._pauseWaitTimeLost + (time.time() - self._pauseWaitStartTime)
 					self._pauseWaitStartTime = None
@@ -1044,6 +1050,8 @@ class MachineCom(object):
 
 				# now make sure we actually do something, up until now we only filled up the queue
 				self._sendFromQueue()
+			elif self._pause_lock:
+				self._fire_unpause = pause
 
 			elif pause and self.isPrinting():
 				if not self._pauseWaitStartTime:
@@ -1064,6 +1072,9 @@ class MachineCom(object):
 					self.sendCommand("M400", on_sent=_on_M400_sent)
 				else:
 					self._pause_preparation_done()
+
+				self._pause_lock = True
+				self._fire_unpause = True
 
 	def getSdFiles(self):
 		return self._sdFiles
