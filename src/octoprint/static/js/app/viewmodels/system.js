@@ -1,9 +1,9 @@
+
 $(function() {
     function SystemViewModel(parameters) {
         var self = this;
 
         self.loginState = parameters[0];
-        self.usersVM = parameters[1];
 
         self.lastCommandResponse = undefined;
         self.systemActions = ko.observableArray([]);
@@ -19,26 +19,6 @@ $(function() {
 
             return OctoPrint.system.getCommands()
                 .done(self.fromCommandResponse);
-        };
-
-        self.currentUser = null;
-        self.editAccessControl = function(actions){
-            // ensures that only 1 access control option exists depending on the state of access control (enabled or disabled)
-            // :param: actions (array of objects)
-            // :returns: edited_actions(array of objects)
-            // objects have following properties: action, actionSource, confirm, name, resource, source (all strings)
-            var isAcEnabled = self.usersVM.listHelper.allSize() > 0;
-            return _.filter(actions, function (data) {
-                if ( data.action == 'aclon' ){
-                    return !isAcEnabled;
-                }
-                else if ( data.action == 'acloff' ){
-                    return isAcEnabled && self.currentUser.admin;
-                }
-                else {
-                    return true;
-                }
-            });
         };
 
         self.fromCommandResponse = function(response) {
@@ -59,7 +39,7 @@ $(function() {
                 actions.push(action);
             });
             self.lastCommandResponse = response;
-            self.systemActions(self.editAccessControl(actions) );
+            self.systemActions(actions);
         };
 
         self.triggerCommand = function(commandSpec) {
@@ -68,20 +48,19 @@ $(function() {
             var callback = function() {
                 OctoPrint.system.executeCommand(commandSpec.actionSource, commandSpec.action)
                     .done(function() {
-                        if ( commandSpec.action == 'aclon' || commandSpec.action == 'acloff' ){
-                            new PNotify({title: "Success", text: _.sprintf(gettext("The command \"%(command)s\" executed successfully. Octoprint will restart automatically..."), {command: commandSpec.name}), type: "success"});
-                            deferred.resolve(["success", arguments]);
-                            self.triggerCommand({
-                                action: "restart",
-                                actionSource: "core",
-                                name: "Restart OctoPrint"
-                            });
+                        var text;
+                        if (commandSpec.async) {
+                            text = gettext("The command \"%(command)s\" was triggered asynchronously");
+                        } else {
+                            text = gettext("The command \"%(command)s\" executed successfully");
+                        }
 
-                        }
-                        else {
-                            new PNotify({title: "Success", text: _.sprintf(gettext("The command \"%(command)s\" executed successfully"), {command: commandSpec.name}), type: "success"});
-                            deferred.resolve(["success", arguments]);
-                        }
+                        new PNotify({
+                            title: "Success",
+                            text: _.sprintf(text, {command: commandSpec.name}),
+                            type: "success"
+                        });
+                        deferred.resolve(["success", arguments]);
                     })
                     .fail(function(jqXHR, textStatus, errorThrown) {
                         if (!commandSpec.hasOwnProperty("ignore") || !commandSpec.ignore) {
@@ -113,7 +92,6 @@ $(function() {
         };
 
         self.onUserLoggedIn = function(user) {
-            self.currentUser = user;
             if (user.admin) {
                 self.requestData();
             } else {
@@ -135,6 +113,6 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: SystemViewModel,
-        dependencies: ["loginStateViewModel", "usersViewModel"]
+        dependencies: ["loginStateViewModel"]
     });
 });
