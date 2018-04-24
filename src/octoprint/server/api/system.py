@@ -200,30 +200,33 @@ def _get_core_command_specs():
 	else:
 		name = "Enable remote access security feature" 
 		confirmation = ("You are about to launch the setup wizard to enable remote access security features. You will have to complete the wizard in order to continue using the web dashboard. The dashboard and your printer will automatically restart once the wizard is finished. This will disrupt any active prints.")
-	commands = collections.OrderedDict(
-		shutdown=dict(
-			command=s().get(["server", "commands", "systemShutdownCommand"]),
-			name=gettext("Shutdown system"),
-			confirm=gettext("<strong>You are about to shutdown the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")),
-		reboot=dict(
-			command=s().get(["server", "commands", "systemRestartCommand"]),
-			name=gettext("Reboot system"),
-			confirm=gettext("<strong>You are about to reboot the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")),
-		restart=dict(
-			command=s().get(["server", "commands", "serverRestartCommand"]),
-			name=gettext("Restart OctoPrint"),
-			confirm=gettext("<strong>You are about to restart the OctoPrint server.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")),
-		restart_safe=dict(
-			command=s().get(["server", "commands", "serverRestartCommand"]),
-			name=gettext("Restart OctoPrint in safe mode"),
-			confirm=gettext("<strong>You are about to restart the OctoPrint server in safe mode.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage)."),
-			before=enable_safe_mode),
-		robo_security_wizard=dict(
-			command=s().get(["server", "commands", "serverRestartCommand"]),
-			name=name,
-			confirm=confirmation,
-			before=set_acl_wizard )
-	)
+	
+	commands = collections.OrderedDict()
+	commands['shutdown']=dict(
+		command=s().get(["server", "commands", "systemShutdownCommand"]),
+		name=gettext("Shutdown system"),
+		confirm=gettext("<strong>You are about to shutdown the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")
+		)
+	commands['reboot']=dict(
+		command=s().get(["server", "commands", "systemRestartCommand"]),
+		name=gettext("Reboot system"),
+		confirm=gettext("<strong>You are about to reboot the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")
+		)
+	commands['restart']=dict(
+		command=s().get(["server", "commands", "serverRestartCommand"]),
+		name=gettext("Restart OctoPrint"),
+		confirm=gettext("<strong>You are about to restart the OctoPrint server.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")
+		)
+	commands['restart_safe']=dict(
+		command=s().get(["server", "commands", "serverRestartCommand"]),
+		name=gettext("Restart OctoPrint in safe mode"),
+		confirm=gettext("<strong>You are about to restart the OctoPrint server in safe mode.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage)."),
+		before=enable_safe_mode)
+	commands['robo_security_wizard']=dict(
+		command=s().get(["server", "commands", "serverRestartCommand"]),
+		name=name,
+		confirm=confirmation,
+		before=set_acl_wizard)
 
 	available_commands = collections.OrderedDict()
 	for action, spec in commands.items():
@@ -234,6 +237,7 @@ def _get_core_command_specs():
 		                 async=True,
 		                 debug=True))
 		available_commands[action] = spec
+	
 	return available_commands
 
 
