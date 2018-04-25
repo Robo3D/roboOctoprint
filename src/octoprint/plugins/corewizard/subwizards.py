@@ -139,7 +139,14 @@ class PrinterProfileSubwizard(object):
 		return False
 
 	def _is_printerprofile_wizard_required(self):
-		return self._printer_profile_manager.is_default_unmodified() and self._printer_profile_manager.profile_count == 1
+		unmodified = self._printer_profile_manager.is_default_unmodified()
+		profile_count = self._printer_profile_manager.profile_count
+		required = unmodified and profile_count == 1 and not self._settings.global_get(["server", "firstRun"])
+		# self._logger.info("Printer profile is required? {}".format(required))
+		# self._logger.info("Profile Count: {}".format(profile_count))
+		# self._logger.info("Unmodified? {}".format(unmodified))
+
+		return required
 
 	def _get_printerprofile_wizard_details(self):
 		return dict(required=self._is_printerprofile_wizard_required())
@@ -152,7 +159,7 @@ class SSHSubwizard(object):
 		return True
 
 	def _is_ssh_wizard_required(self):
-		return True
+		return self._user_manager.enabled and not self._user_manager.hasBeenCustomized()
 
 	def _get_ssh_wizard_details(self):
 		return dict(required=self._is_ssh_wizard_required())

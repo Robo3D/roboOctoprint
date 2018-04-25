@@ -1,0 +1,868 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"get",
+				"get_info\tfunction"
+			],
+			[
+				"curre",
+				"current_channel\tstatement"
+			],
+			[
+				"get_in",
+				"get_installed_version\tfunction"
+			],
+			[
+				"cla",
+				"classmethod\tclass"
+			],
+			[
+				"C2",
+				"C2_BED"
+			],
+			[
+				"MIN",
+				"MIN_PROBE_EDGE"
+			],
+			[
+				"defin",
+				"definition\tstatement"
+			],
+			[
+				"MESH",
+				"MESH_BED_LEVELING"
+			],
+			[
+				"child",
+				"child_pipe"
+			],
+			[
+				"tim",
+				"timer_off\tfunction"
+			],
+			[
+				"ti",
+				"timer_set\tfunction"
+			],
+			[
+				"mo",
+				"monitor_off\tfunction"
+			],
+			[
+				"MO",
+				"MONITOR_OFF"
+			],
+			[
+				"Ti",
+				"TIMER_OFF"
+			],
+			[
+				"M",
+				"MONITOR_OFF"
+			],
+			[
+				"TIM",
+				"TIMER_OFF"
+			],
+			[
+				"T",
+				"TIMER_SET"
+			],
+			[
+				"mon",
+				"monitor"
+			],
+			[
+				"start",
+				"start_monitor\tfunction"
+			],
+			[
+				"parent",
+				"parent_alive"
+			],
+			[
+				"run",
+				"run_results\tfunction"
+			],
+			[
+				"ap",
+				"api_key\tparam"
+			],
+			[
+				"fina",
+				"final_destination"
+			],
+			[
+				"hea",
+				"turn_off_heaters"
+			],
+			[
+				"try",
+				"try\tTry/Except"
+			],
+			[
+				"back",
+				"back_function_flow\tfunction"
+			],
+			[
+				"Preheat",
+				"Preheat_Overseer"
+			],
+			[
+				"de",
+				"debug_FTZO\tfunction"
+			],
+			[
+				"FT",
+				"FTZO_screens\tmodule"
+			],
+			[
+				"Pic",
+				"Picture_Image_on_Button_Screen"
+			],
+			[
+				"clea",
+				"cleanup"
+			],
+			[
+				"key",
+				"key_instance"
+			],
+			[
+				"wai",
+				"wait_screen"
+			],
+			[
+				"Be",
+				"BedCal_Workflow"
+			],
+			[
+				"Butt",
+				"Button_Screen"
+			],
+			[
+				"end",
+				"end_point"
+			],
+			[
+				"He",
+				"Heater_Selector"
+			],
+			[
+				"PID",
+				"PID_Overseer"
+			],
+			[
+				"Bu",
+				"Button_Screen"
+			],
+			[
+				"remo",
+				"remove_widget"
+			],
+			[
+				"op",
+				"option2_function"
+			],
+			[
+				"cu",
+				"custom_object"
+			],
+			[
+				"Obje",
+				"Object_Modal_Question"
+			],
+			[
+				"fini",
+				"finish_screen\tstatement"
+			],
+			[
+				"button",
+				"button_function"
+			],
+			[
+				"Pictu",
+				"Picture_Button_Screen"
+			],
+			[
+				"self",
+				"self\tparam"
+			],
+			[
+				"call",
+				"callback"
+			],
+			[
+				"clear",
+				"clear_widgets\tfunction"
+			],
+			[
+				"wea",
+				"weakproxy\tmodule"
+			],
+			[
+				"weak",
+				"weak_exit"
+			],
+			[
+				"none",
+				"None"
+			],
+			[
+				"bck",
+				"back_button_screen\tNone"
+			],
+			[
+				"retur",
+				"return_previous"
+			],
+			[
+				"Scre",
+				"Screen_Node\tclass"
+			],
+			[
+				"prev",
+				"prev_screen"
+			],
+			[
+				"retu",
+				"return_previous"
+			],
+			[
+				"obje",
+				"objects_in_gc\tstatement"
+			],
+			[
+				"gar",
+				"garbage"
+			],
+			[
+				"Scr",
+				"Scroll_Box_Even\tclass"
+			],
+			[
+				"__",
+				"__del__\tfunction"
+			],
+			[
+				"obj",
+				"obj_len\tstatement"
+			],
+			[
+				"ob",
+				"obj_len\tstatement"
+			],
+			[
+				"wa",
+				"weakref\tmodule"
+			],
+			[
+				"del",
+				"del_list\tstatement"
+			],
+			[
+				"Pre",
+				"Preheat_Overseer\tclass"
+			],
+			[
+				"make",
+				"make_screen"
+			],
+			[
+				"us",
+				"usb_disk_size\tstatement"
+			],
+			[
+				"usb",
+				"usb_mounted"
+			],
+			[
+				"disk",
+				"disk_size\tstatement"
+			],
+			[
+				"fol",
+				"folder_result\tstatement"
+			],
+			[
+				"file",
+				"file_list\tstatement"
+			],
+			[
+				"cop",
+				"copy_folder"
+			],
+			[
+				"copy",
+				"copy_file"
+			],
+			[
+				"get_re",
+				"get_referrers\tfunction"
+			],
+			[
+				"node",
+				"node_print_out"
+			],
+			[
+				"S",
+				"Screen_Node"
+			],
+			[
+				"Th",
+				"THIS_DIR"
+			],
+			[
+				"gcod",
+				"gcode_files"
+			],
+			[
+				"g",
+				"gcode_files"
+			],
+			[
+				"ver",
+				"versioning_path"
+			],
+			[
+				"ve",
+				"versioning_path\tstatement"
+			],
+			[
+				"ACL",
+				"ACL_DIRECTORY"
+			],
+			[
+				"flas",
+				"flash_arduino"
+			],
+			[
+				"cl",
+				"className"
+			],
+			[
+				"langu",
+				"language\tstatement"
+			],
+			[
+				"lan",
+				"language_options"
+			],
+			[
+				"open",
+				"openTab"
+			],
+			[
+				"Robo",
+				"RobolcdPluginViewModel"
+			],
+			[
+				"ro",
+				"robo_tab_ViewModel"
+			],
+			[
+				"di",
+				"div\tTag"
+			],
+			[
+				"font",
+				"font-style"
+			],
+			[
+				"text",
+				"text-align"
+			],
+			[
+				"engli",
+				"english_pack\tstatement"
+			],
+			[
+				"u",
+				"utf-8"
+			],
+			[
+				"Language",
+				"Language_Pack\tclass"
+			],
+			[
+				"yaml",
+				"yaml_path\tstatement"
+			],
+			[
+				"englis",
+				"english_pack"
+			],
+			[
+				"Lan",
+				"Language_Pack\tclass"
+			],
+			[
+				"__ge",
+				"__getitem__\tfunction"
+			],
+			[
+				"La",
+				"Language_Pack\tclass"
+			],
+			[
+				"upda",
+				"update_buttons\tstatement"
+			],
+			[
+				"rest",
+				"restart_screen"
+			],
+			[
+				"SE",
+				"SERIAL_ECHOPAIR"
+			],
+			[
+				"extru",
+				"extruder_count"
+			],
+			[
+				"cha",
+				"change_screen_event_action\tfunction"
+			],
+			[
+				"change",
+				"change_screen_actions\tfunction"
+			],
+			[
+				"ex",
+				"exit\tstatement"
+			],
+			[
+				"chi",
+				"child_pipe\tparam"
+			],
+			[
+				"chil",
+				"child_pipe"
+			],
+			[
+				"sta",
+				"start_process\tstatement"
+			],
+			[
+				"trac",
+				"trace_out\tfunction"
+			],
+			[
+				"trace",
+				"trace_in"
+			],
+			[
+				"pre",
+				"prepare_for_lines\tfunction"
+			],
+			[
+				"sho",
+				"show_wait_screen\tfunction"
+			],
+			[
+				"wait",
+				"wait_screen_skip_action"
+			],
+			[
+				"chang",
+				"change_screen_actions\tstatement"
+			],
+			[
+				"chan",
+				"change_screen_event"
+			],
+			[
+				"bed",
+				"BedCal_Workflow\tclass"
+			],
+			[
+				"pic",
+				"pic_options\tstatement"
+			],
+			[
+				"robo",
+				"robo_sorting_options\tstatement"
+			],
+			[
+				"passwo",
+				"password_buffer"
+			],
+			[
+				"pass",
+				"password"
+			],
+			[
+				"bin_",
+				"bin_unpick\tstatement"
+			],
+			[
+				"bin",
+				"binascii\tmodule"
+			],
+			[
+				"fork",
+				"fork_mode"
+			],
+			[
+				"cat",
+				"catcher_returns\tstatement"
+			],
+			[
+				"regi",
+				"register_observer\tfunction"
+			]
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"PlatformIO",
+					""
+				],
+				[
+					"PlatformIO",
+					"Build"
+				],
+				[
+					"PlatformIO",
+					"Clean"
+				],
+				[
+					"PlatformIO",
+					"Test"
+				],
+				[
+					"PlatformIO",
+					"Upload"
+				],
+				[
+					"PlatformIO",
+					"Upload using Programmer"
+				],
+				[
+					"PlatformIO",
+					"Upload SPIFFS image"
+				],
+				[
+					"PlatformIO",
+					"Update platforms and libraries"
+				]
+			],
+			[
+				"PlatformIO",
+				""
+			]
+		]
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 392.0,
+		"last_filter": "Package Control: ",
+		"selected_items":
+		[
+			[
+				"Package Control: ",
+				"Package Control: Remove Package"
+			],
+			[
+				"mark",
+				"Markdown Preview: Preview in Browser"
+			]
+		],
+		"width": 461.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/home/matt/Remote Workspace/roboOctoprint"
+	],
+	"file_history":
+	[
+		"/home/matt/Remote Workspace/CHIP/README.md",
+		"/home/matt/Remote Workspace/RoboLCD/README.md",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/zoffset/z_offset_workflow.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/__init__.py",
+		"/home/matt/Remote Workspace/RoboLCD/setup.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/slicer_wizard.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/slicer_profile/robo.profile",
+		"/home/matt/Downloads/6_Dron_raft_ABS.gcode",
+		"/home/matt/Sliced_objects/big_box.gco",
+		"/home/matt/objects/50x50x25mm_box.gcode",
+		"/home/matt/objects/50x50x25mm_box_lq.gco",
+		"/home/matt/Documents/ROBO_BRAILLE_SCALED_X2_s3d.gcode",
+		"/home/matt/workspace/Robo_Marlin/Marlin/Marlin/Configuration.h",
+		"/home/matt/Sliced_objects/3D_Benchy.gcode",
+		"/home/matt/workspace/Robo_Marlin/Marlin/Marlin/pins_ROBOMB.h",
+		"/home/matt/Documents/update.xml",
+		"/home/matt/Downloads/Spanish.yaml",
+		"/home/matt/workspace/Robo_Marlin/Marlin/README.md",
+		"/home/matt/workspace/Robo_Marlin/Marlin/.gitignore",
+		"/home/matt/workspace/Robo_Marlin/Marlin/src/Marlin_main.cpp",
+		"/home/matt/workspace/Robo_Marlin/Marlin/platformio.ini",
+		"/home/matt/workspace/Robo_Marlin/Marlin/extra_script.py",
+		"/home/matt/workspace/Robo_Marlin/Marlin/.pioenvs/megaatmega2560/firmware.hex",
+		"/tmp/Deviot/1518635100/src/1518635100.ino",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wifi.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/filament_wizard/filament_wizard.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/FTZO/fine_tune_zoffset.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/filament_wizard/filament_workflow.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/Language.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/static/js/RobolcdPlugin.js",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/lcd_mini.kv",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/Language_Packs/english.yaml",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/templates/RoboLCD_settings.jinja2",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/Language_Packs/french.yaml",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/roboprinter/__init__.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/__init__.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/Language_Packs/redo.yaml",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/Select_Language.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/static/css/RobolcdPlugin.css",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/Language_Packs/gib_gen.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/file_system/files.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/preheat_wizard/preheat_overseer.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/wizard_overseer.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/preheat_wizard/preheat.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/pconsole.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/preheat_wizard/option_view.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/file_system/file_options.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/FTZO/console_watcher.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/PID_Autotune/pid_watcher.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/file_system/directory_browser.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/PID_Autotune/PID_Overseer.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/file_system/file_explorer.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/mainscreen.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/common_screens.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/manualcontrol.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/mainscreen_info.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/FTZO/FTZO_workflow.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/EEPROM/EEPROM_screens.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/wizard_bb.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/update_system/old_system/updater.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/preheat_wizard/preheat_buttons.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/EEPROM/EEPROM.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/connection_popup.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/file_system/file_back_button.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/zoffset/z_offset_wizard.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/filament_wizard/bowden_workflow.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/bed_calibration/bedcal_workflow.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/bed_calibration/bedcal_screens.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/bed_calibration/bed_calibration_wizard.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/PID_Autotune/PID_Screens.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/FTZO/circle_plotter.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/FTZO/FTZO_screens.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/zoffset/console_watcher.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/scrollbox.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/Motor_Control.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/preheat_wizard/__init__.py",
+		"/home/matt/Remote Workspace/roboOS/sftp-config.json",
+		"/home/matt/Remote Workspace/Update_Script/updates/flash_mainboard_c2_1-2-2.sh",
+		"/home/matt/Remote Workspace/Update_Script/updates/gcode_scripts_150.sh",
+		"/home/matt/Remote Workspace/Update_Script/updates/gcode_files_170.sh",
+		"/home/matt/Remote Workspace/Update_Script/delete_me.sh",
+		"/home/matt/Remote Workspace/Update_Script/assets/gcode_scripts/beforePrintStarted",
+		"/home/matt/Remote Workspace/Update_Script/assets/gcode_scripts/afterPrintCancelled",
+		"/home/matt/Documents/repos/octoprint.log",
+		"/home/matt/Remote Workspace/Update_Script/assets/gcode_files/.DS_Store",
+		"/home/matt/Remote Workspace/Update_Script/assets/security_assets/roboacl.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/update_system/old_system/__init__.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/updater.py",
+		"/home/matt/Documents/update.rss",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/static/less/RobolcdPlugin.less",
+		"/home/matt/Remote Workspace/RoboLCD/MANIFEST.in",
+		"/home/matt/Remote Workspace/RoboLCD/babel.cfg",
+		"/home/matt/Remote Workspace/RoboLCD/archive/robolcd.kv",
+		"/home/matt/Remote Workspace/RoboLCD/archive/mainscreen_tabs.py",
+		"/home/matt/Remote Workspace/RoboLCD/archive/mainscreen.py",
+		"/home/matt/Remote Workspace/RoboLCD/archive/main2.py",
+		"/home/matt/Remote Workspace/RoboLCD/archive/main.py",
+		"/home/matt/Remote Workspace/RoboLCD/archive/example.py",
+		"/home/matt/Remote Workspace/RoboLCD/archive/__init__.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/Language_Packs/spanish.yaml",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/update_system/Update_System.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/update_system/Update_Interface.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/update_system/Update_Checker_Tests.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/utilities.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/errors_and_warnings.py",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/wizards/PID_Autotune/pid process.txt",
+		"/home/matt/Remote Workspace/RoboLCD/CHANGELOG.md",
+		"/home/matt/Remote Workspace/RoboLCD/.gitignore",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/R2.kv",
+		"/home/matt/Remote Workspace/RoboLCD/RoboLCD/lcd/printerstatus.py",
+		"/home/matt/Sliced_objects/firetest.gcode",
+		"/home/matt/Remote Workspace/Dual_Extruder_Setup/octoprint_Dual_Extruder_Setup/Octo_Setup/__init__.py",
+		"/home/matt/Remote Workspace/Dual_Extruder_Setup/octoprint_Dual_Extruder_Setup/Octo_Setup/default_profiles.yaml",
+		"/home/matt/Remote Workspace/Dual_Extruder_Setup/octoprint_Dual_Extruder_Setup/static/css/Dual_Extruder_Setup.css",
+		"/home/matt/RoboLCD/RoboLCD/lcd/pconsole.py",
+		"/home/matt/RoboLCD/RoboLCD/lcd/wizards/filament_wizard/filament_workflow.py",
+		"/home/matt/RoboLCD/RoboLCD/__init__.py",
+		"/home/matt/RoboLCD/RoboLCD/lcd/scrollbox.py",
+		"/home/matt/RoboLCD/RoboLCD/lcd/wizards/wizard_bb.py",
+		"/home/matt/RoboLCD/RoboLCD/lcd/wizards/zoffset/z_offset_wizard.py",
+		"/home/matt/RoboLCD/RoboLCD/lcd/wizards/wizard_overseer.py",
+		"/home/matt/RoboLCD/RoboLCD/lcd/R2.kv",
+		"/home/matt/RoboLCD/RoboLCD/lcd/lcd_mini.kv",
+		"/home/matt/RoboLCD/RoboLCD/lcd/Language_Packs/english.yaml",
+		"/home/matt/RoboLCD/RoboLCD/lcd/connection_popup.py",
+		"/home/matt/RoboLCD/RoboLCD/lcd/wizards/FTZO/FTZO_screens.py",
+		"/home/matt/RoboLCD/RoboLCD/lcd/wizards/zoffset/z_offset_workflow.py",
+		"/home/matt/RoboLCD/RoboLCD/lcd/wizards/FTZO/FTZO_workflow.py"
+	],
+	"find":
+	{
+		"height": 46.0
+	},
+	"find_in_files":
+	{
+		"height": 135.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 37.0
+	},
+	"input":
+	{
+		"height": 51.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 208.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"output.mdpopups":
+	{
+		"height": 0.0
+	},
+	"output.sftp":
+	{
+		"height": 133.0
+	},
+	"pinned_build_system": "PlatformIO",
+	"project": "robooctoprint.sublime-project",
+	"replace":
+	{
+		"height": 70.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 380.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 279.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

@@ -226,10 +226,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			"checks": {
 				"octoprint": {
 					"type": "github_release",
-					"user": "foosel",
-					"repo": "OctoPrint",
+					"user": "Robo3D",
+					"repo": "roboOctoprint",
 					"method": "pip",
-					"pip": "https://github.com/foosel/OctoPrint/archive/{target_version}.zip",
+					"pip": "https://github.com/Robo3D/roboOctoprint/archive/{target_version}.zip",
 					"update_script": default_update_script,
 					"restart": "octoprint",
 					"stable_branch": dict(branch="master", commitish=["master"], name="Stable"),

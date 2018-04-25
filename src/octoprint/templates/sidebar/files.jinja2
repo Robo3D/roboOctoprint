@@ -38,6 +38,16 @@
         </div>
     </script>
 
+    <script type="text/html" id="files_template_firmware">
+        <div class="title muted" data-bind="text: name"></div>
+        <div class="uploaded">{{ _('Uploaded') }}: <span data-bind="text: formatTimeAgo(date)"></span></div>
+        <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
+        <div class="btn-group action-buttons">
+            <a class="btn btn-mini" data-bind="attr: {href: $root.downloadLink($data), css: {disabled: !$root.downloadLink($data)}}" title="{{ _('Download') }}"><i class="icon-download-alt"></i></a>
+            <div class="btn btn-mini" data-bind="click: function(data, event) { if ($root.enableRemove($data)) { $root.removeFile($data, event); } else { return; } }, css: {disabled: !$root.enableRemove($data)}" title="{{ _('Remove') }}"><i class="icon-trash"></i></div>
+        </div>
+    </script>
+
     <script type="text/html" id="files_template_folder">
         <div class="title clickable" data-bind="click: $root.changeFolder, style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }"><i class="fa fa-folder-open"></i> <span data-bind="text: display"></span></div>
         <div class="internal" data-bind="visible: name != display">{{ _('Internal') }}: <span data-bind="text: name"></span></div>
