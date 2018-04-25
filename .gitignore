@@ -42,3 +42,5 @@ venv36
 
 *.ftpconfig
 sftp-config.json
+robooctoprint.sublime-project
+robooctoprint.sublime-workspace
