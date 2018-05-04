@@ -173,6 +173,7 @@ def _get_core_command_specs():
 		if acl_enabled:
 			#disable acl
 			s().set(['accessControl', 'enabled'], False)
+			s().set(['accessControl', 'salt'], None)
 			s().save()
 
 			#delete users.yaml
