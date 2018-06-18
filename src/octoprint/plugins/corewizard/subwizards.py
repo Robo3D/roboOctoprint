@@ -11,6 +11,7 @@ import inspect
 from flask.ext.babel import gettext
 
 
+
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
 class ServerCommandsSubwizard(object):
 	def _is_servercommands_wizard_firstrunonly(self):
@@ -175,11 +176,8 @@ class SSHSubwizard(object):
 		import subprocess
 		from flask import request, abort
 		from octoprint.server.api import NO_CONTENT
-		valid_boolean_trues = [True, "true", "yes", "y", "1"]
-		valid_boolean_falses = [False, "false", "no", "n", "0"]
-
-		if not self._settings.global_get(["server", "firstRun"]):
-			abort(404)
+		valid_boolean_trues = [True, "true", "yes", "y"]
+		valid_boolean_falses = [False, "false", "no", "n"]
 
 		data = request.values
 		if hasattr(request, "json") and request.json:

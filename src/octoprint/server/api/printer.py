@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from flask import request, jsonify, make_response, Response
 from werkzeug.exceptions import BadRequest
 import re
+import socket
 
 from octoprint.settings import settings, valid_boolean_trues
 from octoprint.server import printer, printerProfileManager, NO_CONTENT
@@ -415,3 +416,8 @@ def _delete_from_data(x, key_matcher):
 		if key_matcher(k):
 			del data[k]
 	return data
+
+########## Get the printers hostname
+@api.route("/printer/hostname", methods=["GET"])
+def get_name():
+	return socket.gethostname()

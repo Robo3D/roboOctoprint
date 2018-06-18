@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title data-bind="text: title">OctoPrint</title>
+        <title data-bind="text: title">Robo</title>
 
         <link rel="shortcut icon" href="{{ url_for('static', filename='img/tentacle-32x32.png') }}">
         <link rel="mask-icon" href="{{ url_for('static', filename='img/favicon.svg') }}" color="#56BE37">
@@ -18,7 +18,7 @@
             <div id="navbar" class="navbar navbar-static-top">
                 <div class="navbar-inner" data-bind="css: appearanceClasses">
                     <div class="container">
-                        <a class="brand" href="javascript:void(0)" data-bind="attr: {title: appearance.fullbrand}"><span data-bind="text: appearance.brand">OctoPrint</span></a>
+                        <a class="brand" href="javascript:void(0)" data-bind="attr: {title: appearance.fullbrand}"><span data-bind="text: appearance.brand">Robo</span></a>
                         <div class="nav-collapse">
                             <!-- Navbar -->
                             <ul class="nav pull-right">
@@ -115,9 +115,9 @@
                     </ul>
                     <ul id="footer_links" class="pull-right">
                         <li><a href="https://octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-home"></i> {{ _('Homepage') }}</a></li>
-                        <li><a href="https://github.com/foosel/OctoPrint/" target="_blank" rel="noreferrer noopener"><i class="fa fa-github"></i> {{ _('Source') }}</a></li>
+                        <li><a href="https://github.com/Robo3D/roboOctoprint" target="_blank" rel="noreferrer noopener"><i class="fa fa-github"></i> {{ _('Source') }}</a></li>
                         <li><a href="http://docs.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-book"></i> {{ _('Docs') }}</a></li>
-                        <li><a href="https://github.com/foosel/OctoPrint/issues" target="_blank" rel="noreferrer noopener"><i class="fa fa-flag"></i> {{ _('Issues') }}</a></li>
+                        <li><a href="https://github.com/Robo3D/roboOctoprint/issues" target="_blank" rel="noreferrer noopener"><i class="fa fa-flag"></i> {{ _('Issues') }}</a></li>
                         <li><a href="https://github.com/foosel/OctoPrint/wiki/FAQ" target="_blank" rel="noreferrer noopener"><i class="fa fa-question-circle"></i> {{ _('FAQ') }}</a></li>
                         <li id="footer_about"><a href="javascript:void(0)" data-bind="click: show"><i class="fa fa-info-circle"></i> {{ _('About') }}</a></li>
                     </ul>

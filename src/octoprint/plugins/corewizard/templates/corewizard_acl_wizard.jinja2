@@ -4,16 +4,15 @@
     <strong>Please read the following, it is very important for your printer's health!</strong>
 </p>
 <p>
-    OctoPrint by default ships with Access Control enabled, meaning you won't be able to do anything with the
-    printer unless you login first as a configured user. This is to <strong>prevent strangers - possibly with
-    malicious intent - to gain access to your printer</strong> via the internet or another untrustworthy network
-    and using it in such a way that it is damaged or worse (i.e. causes a fire).
+  When Access Control is enabled, <strong>you cannot control the printer from the web dashboard unless you are logged in.</strong> Additionally, you can only access the API QR code from the logged in view of the web dashboard. This prevents unregistered users from accessing and using your printer via the internet or Robo mobile app. We advise enabling Access Control when your printer is connected to an unsecure or shared network (such as a school or public places).
 </p>
 <p>
-    It looks like you haven't configured access control yet. Please <strong>set up a username and password</strong> for the
-    initial administrator account who will have full access to both the printer and OctoPrint's settings, then click
-    on "Keep Access Control Enabled":
-</p>{% endtrans %}
+  To configure Access Control, please set up a username and password for the printer administrator account. This is the account you will need to sign in to get full access to the printer controls and settings. You can add more users once you complete the administrator registration. Select 'Enable Access Control' before proceeding.
+</p>
+<p>
+  To skip this step, select 'Disable Access Control' and then 'Next'
+</p>
+{% endtrans %}
 <form class="form-horizontal">
     <div class="control-group" data-bind="css: {success: validUsername()}">
         <label class="control-label" for="first_run_username">{{ _('Username') }}</label>
@@ -35,14 +34,11 @@
         </div>
     </div>
 </form>
-{% trans %}<p>
-    <strong>Note:</strong> In case that your OctoPrint installation is only accessible from within a trustworthy network and you don't
-    need Access Control for other reasons, you may alternatively disable Access Control. You should only
-    do this if you are absolutely certain that only people you know and trust will be able to connect to it.
-</p>
+{% trans %}
 <p>
-    <strong>Do NOT underestimate the risk of an unsecured access from the internet to your printer!</strong>
-</p>{% endtrans %}
+    <strong>NOTE:</strong> If you lose your password, Robo will not be able to assist you with retrieving or resetting it without reflashing the operating system. In which case, all your data will be lost.
+</p>
+{% endtrans %}
 
 <div class="row-fluid">
     <a href="#" class="btn btn-danger span6" data-bind="click: function() { if(!setup()){disableAccessControl()}}, enable: !setup(), css: {disabled: setup()}">{{ _('Disable Access Control') }}</a>
