@@ -9,6 +9,7 @@ import octoprint.plugin
 import sys
 import inspect
 from flask.ext.babel import gettext
+from octoprint.server.util.flask import restricted_access
 
 
 
@@ -172,6 +173,7 @@ class SSHSubwizard(object):
 		return dict(mandatory=self._is_acl_wizard_required())
 
 	@octoprint.plugin.BlueprintPlugin.route("/ssh", methods=["POST"])
+	@restricted_access
 	def get_ssh_control(self):
 		import subprocess
 		from flask import request, abort
