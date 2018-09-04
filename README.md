@@ -2,7 +2,7 @@
 ## In Development!  Not compatible with RoboOS 2.0 and below.
 
 
-[![GitHub version](https://badge.fury.io/gh/foosel%2FOctoPrint.svg)](https://badge.fury.io/gh/foosel%2FOctoPrint)
+[![GitHub version](https://badge.fury.io/gh/Robo3D%2FroboOctoprint.svg)](https://badge.fury.io/gh/Robo3D%2FroboOctoprint)
 
 OctoPrint provides a snappy web interface for controlling consumer 3D printers. It is Free Software
 and released under the [GNU Affero General Public License V3](http://www.gnu.org/licenses/agpl.html).
